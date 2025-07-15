@@ -2,7 +2,7 @@ from flask import request,make_response,jsonify
 from flask_restful import Resource
 from sqlalchemy.exc import IntegrityError
 from config import app, db, api
-from models import User,Parcel,ParcelHistory
+from models import User#,Parcel,ParcelHistory
 from flask_jwt_extended import create_access_token,jwt_required, get_jwt,get_jwt_identity
 from config import blacklist
 
@@ -14,7 +14,8 @@ class Signup(Resource):
             user = User(
                 username=data['username'],
                 email=data['email'],
-                admin=data.get('admin', False)
+                admin=data.get('admin', False),
+                phone_number=data['phone_number']
             )
             user.password = data['password']  
 

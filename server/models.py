@@ -42,7 +42,7 @@ class User(db.Model,SerializerMixin):
             self._password, password.encode('utf-8'))
         
         
-class Parcel(db.Model,SerializerMixin):
-    pass
-class ParcelHistory(db.Model,SerializerMixin):
-    pass
+#class Parcel(db.Model,SerializerMixin):
+ #   pass
+#class ParcelHistory(db.Model,SerializerMixin):
+ #   pass
