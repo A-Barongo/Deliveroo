@@ -114,3 +114,19 @@ def test_edit_destination(client, db_session, monkeypatch):
     assert response.status_code == 200
     response = client.patch(f'/parcels/{parcel_id}/destination', json={'destination_location_text': 'Other'})
     assert response.status_code == 400
+
+def test_get_parcels_includes_weight(client, db_session, monkeypatch):
+    data = valid_parcel_data()
+    data['weight'] = 3.0
+    response = client.post('/parcels', json=data)
+    assert response.status_code == 201
+    parcel_id = response.get_json()['id']
+    response = client.get('/parcels')
+    assert response.status_code == 200
+    parcels = response.get_json()
+    found = False
+    for parcel in parcels:
+        if parcel['id'] == parcel_id:
+            assert parcel['weight'] == 3.0
+            found = True
+    assert found
