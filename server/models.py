@@ -19,7 +19,6 @@ class User(db.Model,SerializerMixin):
     latitude_hash = db.Column(db.Text)
     _password=db.Column(db.String, nullable=False)
     admin=db.Column(db.Boolean, default=False)
-    created_at=db.Column(db.String,nullable=False,unique=True)
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
   
     @validates('email')

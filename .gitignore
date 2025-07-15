@@ -1,3 +1,4 @@
 .db
 instance
 migrations 
+.env
