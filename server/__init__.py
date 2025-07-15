@@ -2,7 +2,7 @@ from flask import Flask, g, request
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from .models import Base
-from .routes import parcels_bp
+from .routes.parcels import parcels_bp
 import os
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///deliveroo.db')
