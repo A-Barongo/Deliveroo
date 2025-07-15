@@ -41,6 +41,8 @@ class User(db.Model,SerializerMixin):
     def authenticate(self, password):
         return bcrypt.check_password_hash(
             self._password, password.encode('utf-8'))
+        
+        
 class Parcel(db.Model,SerializerMixin):
     pass
 class ParcelHistory(db.Model,SerializerMixin):
