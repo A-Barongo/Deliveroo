@@ -141,3 +141,45 @@ def test_get_parcel_by_id_includes_weight(client, db_session, monkeypatch):
     assert response.status_code == 200
     parcel = response.get_json()
     assert parcel['weight'] == 4.2
+
+def test_patch_destination_does_not_update_weight(client, db_session, monkeypatch):
+    data = valid_parcel_data()
+    data['weight'] = 5.0
+    response = client.post('/parcels', json=data)
+    assert response.status_code == 201
+    parcel_id = response.get_json()['id']
+    # Try to update destination and weight (should ignore weight)
+    response = client.patch(f'/parcels/{parcel_id}/destination', json={
+        'destination_location_text': 'NewPlace',
+        'weight': 10.0
+    })
+    assert response.status_code == 200
+    parcel = response.get_json()
+    assert parcel['destination_location_text'] == 'NewPlace'
+    assert parcel['weight'] == 5.0  # weight should not change
+
+def test_patch_status_does_not_update_weight(client, db_session, monkeypatch):
+    data = valid_parcel_data()
+    data['weight'] = 6.0
+    response = client.post('/parcels', json=data)
+    assert response.status_code == 201
+    parcel_id = response.get_json()['id']
+    # Update status
+    response = client.patch(f'/parcels/{parcel_id}/status', json={'status': 'delivered'})
+    assert response.status_code == 200
+    parcel = response.get_json()
+    assert parcel['status'] == 'delivered'
+    assert parcel['weight'] == 6.0  # weight should not change
+
+def test_cancel_parcel_weight_present(client, db_session, monkeypatch):
+    data = valid_parcel_data()
+    data['weight'] = 7.0
+    response = client.post('/parcels', json=data)
+    assert response.status_code == 201
+    parcel_id = response.get_json()['id']
+    # Cancel parcel
+    response = client.patch(f'/parcels/{parcel_id}/cancel')
+    assert response.status_code == 200
+    parcel = response.get_json()
+    assert parcel['status'] == 'cancelled'
+    assert parcel['weight'] == 7.0
