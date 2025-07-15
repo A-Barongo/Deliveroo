@@ -47,7 +47,8 @@ def valid_parcel_data():
         'destination_longitude': 36.8219,
         'destination_latitude': -1.2921,
         'recipient_name': 'Bob',
-        'recipient_phone_number': 9876543210
+        'recipient_phone_number': 9876543210,
+        'weight': 1.5
     }
 
 def test_calculate_parcel_cost():
