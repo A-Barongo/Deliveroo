@@ -21,4 +21,5 @@ class ParcelSchema(Schema):
     recipient_name = fields.String(required=True, validate=validate.Length(min=1))
     recipient_phone_number = fields.Integer(required=True)
     courier_id = fields.Integer(allow_none=True)
-    user_id = fields.Integer(dump_only=True) 
+    user_id = fields.Integer(dump_only=True)
+    weight = fields.Float(required=False) 
