@@ -14,31 +14,27 @@ parcel_schema = ParcelSchema()
 @parcels_bp.route('/parcels', methods=['POST'])
 def create_parcel():
     data = request.get_json()
-    try:
-        validated = parcel_schema.load(data)
-    except Exception as err:
-        return jsonify({'error': str(err)}), 400
-    weight = validated.get('weight', 1)
+    weight = data.get('weight', 1)
     cost = calculate_parcel_cost(weight)
     parcel = Parcel(
+        description=data.get('description'),
         weight=weight,
-        description=validated['description'],
         status='pending',
-        sender_name=validated['sender_name'],
-        sender_phone_number=validated['sender_phone_number'],
-        pickup_location_text=validated['pickup_location_text'],
-        destination_location_text=validated['destination_location_text'],
-        pick_up_longitude=validated['pick_up_longitude'],
-        pick_up_latitude=validated['pick_up_latitude'],
-        destination_longitude=validated['destination_longitude'],
-        destination_latitude=validated['destination_latitude'],
-        current_location_longitude=validated.get('current_location_longitude'),
-        current_location_latitude=validated.get('current_location_latitude'),
-        distance=validated.get('distance'),
+        sender_name=data.get('sender_name'),
+        sender_phone_number=data.get('sender_phone_number'),
+        pickup_location_text=data.get('pickup_location_text'),
+        destination_location_text=data.get('destination_location_text'),
+        pick_up_longitude=data.get('pick_up_longitude'),
+        pick_up_latitude=data.get('pick_up_latitude'),
+        destination_longitude=data.get('destination_longitude'),
+        destination_latitude=data.get('destination_latitude'),
+        current_location_longitude=data.get('current_location_longitude'),
+        current_location_latitude=data.get('current_location_latitude'),
+        distance=data.get('distance'),
         cost=cost,
-        recipient_name=validated['recipient_name'],
-        recipient_phone_number=validated['recipient_phone_number'],
-        courier_id=validated.get('courier_id'),
+        recipient_name=data.get('recipient_name'),
+        recipient_phone_number=data.get('recipient_phone_number'),
+        courier_id=data.get('courier_id'),
         user_id=get_current_user_id()
     )
     db: Session = request.environ['db_session']
@@ -46,7 +42,6 @@ def create_parcel():
     db.commit()
     db.refresh(parcel)
     return parcel_schema.dump(parcel), 201
-
 @parcels_bp.route('/parcels', methods=['GET'])
 def list_parcels():
     db: Session = request.environ['db_session']
@@ -71,14 +66,12 @@ def get_parcel(parcel_id):
     if not parcel:
         return jsonify({'error': 'Parcel not found'}), 404
     return parcel_schema.dump(parcel), 200
-
 @parcels_bp.route('/parcels/<int:parcel_id>/cancel', methods=['PATCH'])
 def cancel_parcel(parcel_id):
     db: Session = request.environ['db_session']
     parcel = db.query(Parcel).filter_by(id=parcel_id, user_id=get_current_user_id()).first()
     if not parcel:
         return jsonify({'error': 'Parcel not found'}), 404
-    db.refresh(parcel)
     if parcel.status == 'delivered':
         return jsonify({'error': 'Cannot cancel delivered parcel'}), 400
     parcel.status = 'cancelled'
@@ -92,22 +85,16 @@ def edit_parcel_destination(parcel_id):
     parcel = db.query(Parcel).filter_by(id=parcel_id, user_id=get_current_user_id()).first()
     if not parcel:
         return jsonify({'error': 'Parcel not found'}), 404
-    db.refresh(parcel)
     if parcel.status == 'delivered':
         return jsonify({'error': 'Cannot edit delivered parcel'}), 400
     data = request.get_json()
-    try:
-        validated = parcel_schema.load(data, partial=True)
-    except Exception as err:
-        return jsonify({'error': str(err)}), 400
-    new_destination = validated.get('destination_location_text')
+    new_destination = data.get('destination_location_text')
     if not new_destination:
         return jsonify({'error': 'destination_location_text required'}), 400
     parcel.destination_location_text = new_destination
     parcel.updated_at = datetime.utcnow()
     db.commit()
     return parcel_schema.dump(parcel), 200
-
 @parcels_bp.route('/parcels/<int:parcel_id>/status', methods=['PATCH'])
 def update_parcel_status(parcel_id):
     db: Session = request.environ['db_session']
