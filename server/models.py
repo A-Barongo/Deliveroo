@@ -8,11 +8,12 @@ Base = declarative_base()
 class Parcel(Base):
     """
     Parcel model for delivery orders.
-    Includes sender, recipient, location, status, and cost details.
+    Includes sender, recipient, location, status, cost, and weight details.
     """
     __tablename__ = 'parcels'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    weight = Column(Float, nullable=True)
     description = Column(Text)
     status = Column(String(32), nullable=False, default='pending', index=True)
     sender_name = Column(String(64), nullable=False)
