@@ -55,6 +55,11 @@ def test_calculate_parcel_cost():
     assert calculate_parcel_cost(2) == 300
     assert calculate_parcel_cost(0.5) == 75
 
+def test_cost_calculation_with_weight():
+    assert calculate_parcel_cost(1.5) == 225
+    assert calculate_parcel_cost(0) == 0
+    assert calculate_parcel_cost(10) == 1500
+
 def test_create_parcel_valid(client, db_session, monkeypatch):
     data = valid_parcel_data()
     data['weight'] = 2.5
