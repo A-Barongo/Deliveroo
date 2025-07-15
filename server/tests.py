@@ -56,6 +56,7 @@ def test_calculate_parcel_cost():
 
 def test_create_parcel_valid(client, db_session, monkeypatch):
     data = valid_parcel_data()
+    data['weight'] = 2.5
     response = client.post('/parcels', json=data)
     assert response.status_code == 201
     resp = response.get_json()
@@ -64,6 +65,7 @@ def test_create_parcel_valid(client, db_session, monkeypatch):
     assert resp['recipient_name'] == data['recipient_name']
     assert resp['status'] == 'pending'
     assert 'id' in resp
+    assert resp['weight'] == 2.5
 
 def test_create_parcel_invalid(client, db_session):
     data = valid_parcel_data()
