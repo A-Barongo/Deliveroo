@@ -5,4 +5,4 @@ def calculate_parcel_cost(weight_kg: float) -> float:
     :return: Cost in Ksh
     """
     rate_per_kg = 150
-    return round(weight_kg * rate_per_kg, 2) 
+    return round(weight_kg * rate_per_kg, 2)

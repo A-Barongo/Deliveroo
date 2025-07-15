@@ -1,0 +1,113 @@
+from flask import Blueprint, request, jsonify
+from sqlalchemy.orm import Session
+from .models import Parcel
+from .helpers import calculate_parcel_cost
+from .schemas import ParcelSchema
+from datetime import datetime
+
+def get_current_user_id():
+    # Placeholder: Replace with real authentication
+    return 1
+
+parcels_bp = Blueprint('parcels', __name__)
+parcel_schema = ParcelSchema()
+
+@parcels_bp.route('/parcels', methods=['POST'])
+def create_parcel():
+    data = request.get_json()
+    try:
+        validated = parcel_schema.load(data)
+    except Exception as err:
+        return jsonify({'error': str(err)}), 400
+    cost = calculate_parcel_cost(data.get('weight', 1))
+    parcel = Parcel(
+        description=validated['description'],
+        status='pending',
+        sender_name=validated['sender_name'],
+        sender_phone_number=validated['sender_phone_number'],
+        pickup_location_text=validated['pickup_location_text'],
+        destination_location_text=validated['destination_location_text'],
+        pick_up_longitude=validated['pick_up_longitude'],
+        pick_up_latitude=validated['pick_up_latitude'],
+        destination_longitude=validated['destination_longitude'],
+        destination_latitude=validated['destination_latitude'],
+        current_location_longitude=validated.get('current_location_longitude'),
+        current_location_latitude=validated.get('current_location_latitude'),
+        distance=validated.get('distance'),
+        cost=cost,
+        recipient_name=validated['recipient_name'],
+        recipient_phone_number=validated['recipient_phone_number'],
+        courier_id=validated.get('courier_id'),
+        user_id=get_current_user_id()
+    )
+    db: Session = request.environ['db_session']
+    db.add(parcel)
+    db.commit()
+    db.refresh(parcel)
+    return parcel_schema.dump(parcel), 201
+
+@parcels_bp.route('/parcels', methods=['GET'])
+def list_parcels():
+    db: Session = request.environ['db_session']
+    user_id = get_current_user_id()
+    parcels = db.query(Parcel).filter_by(user_id=user_id).all()
+    return jsonify(parcel_schema.dump(parcels, many=True)), 200
+
+@parcels_bp.route('/parcels/<int:parcel_id>', methods=['GET'])
+def get_parcel(parcel_id):
+    db: Session = request.environ['db_session']
+    parcel = db.query(Parcel).filter_by(id=parcel_id, user_id=get_current_user_id()).first()
+    if not parcel:
+        return jsonify({'error': 'Parcel not found'}), 404
+    return parcel_schema.dump(parcel), 200
+
+@parcels_bp.route('/parcels/<int:parcel_id>/cancel', methods=['PATCH'])
+def cancel_parcel(parcel_id):
+    db: Session = request.environ['db_session']
+    parcel = db.query(Parcel).filter_by(id=parcel_id, user_id=get_current_user_id()).first()
+    if not parcel:
+        return jsonify({'error': 'Parcel not found'}), 404
+    db.refresh(parcel)
+    if parcel.status == 'delivered':
+        return jsonify({'error': 'Cannot cancel delivered parcel'}), 400
+    parcel.status = 'cancelled'
+    parcel.updated_at = datetime.utcnow()
+    db.commit()
+    return parcel_schema.dump(parcel), 200
+
+@parcels_bp.route('/parcels/<int:parcel_id>/destination', methods=['PATCH'])
+def edit_parcel_destination(parcel_id):
+    db: Session = request.environ['db_session']
+    parcel = db.query(Parcel).filter_by(id=parcel_id, user_id=get_current_user_id()).first()
+    if not parcel:
+        return jsonify({'error': 'Parcel not found'}), 404
+    db.refresh(parcel)
+    if parcel.status == 'delivered':
+        return jsonify({'error': 'Cannot edit delivered parcel'}), 400
+    data = request.get_json()
+    try:
+        validated = parcel_schema.load(data, partial=True)
+    except Exception as err:
+        return jsonify({'error': str(err)}), 400
+    new_destination = validated.get('destination_location_text')
+    if not new_destination:
+        return jsonify({'error': 'destination_location_text required'}), 400
+    parcel.destination_location_text = new_destination
+    parcel.updated_at = datetime.utcnow()
+    db.commit()
+    return parcel_schema.dump(parcel), 200
+
+@parcels_bp.route('/parcels/<int:parcel_id>/status', methods=['PATCH'])
+def update_parcel_status(parcel_id):
+    db: Session = request.environ['db_session']
+    parcel = db.query(Parcel).filter_by(id=parcel_id, user_id=get_current_user_id()).first()
+    if not parcel:
+        return jsonify({'error': 'Parcel not found'}), 404
+    data = request.get_json()
+    new_status = data.get('status')
+    if not new_status:
+        return jsonify({'error': 'status required'}), 400
+    parcel.status = new_status
+    parcel.updated_at = datetime.utcnow()
+    db.commit()
+    return parcel_schema.dump(parcel), 200

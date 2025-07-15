@@ -25,4 +25,4 @@ def create_app():
             db.close()
 
     app.register_blueprint(parcels_bp)
-    return app 
+    return app
