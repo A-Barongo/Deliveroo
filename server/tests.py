@@ -130,3 +130,14 @@ def test_get_parcels_includes_weight(client, db_session, monkeypatch):
             assert parcel['weight'] == 3.0
             found = True
     assert found
+
+def test_get_parcel_by_id_includes_weight(client, db_session, monkeypatch):
+    data = valid_parcel_data()
+    data['weight'] = 4.2
+    response = client.post('/parcels', json=data)
+    assert response.status_code == 201
+    parcel_id = response.get_json()['id']
+    response = client.get(f'/parcels/{parcel_id}')
+    assert response.status_code == 200
+    parcel = response.get_json()
+    assert parcel['weight'] == 4.2
