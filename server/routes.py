@@ -6,7 +6,6 @@ from .schemas import ParcelSchema
 from datetime import datetime
 
 def get_current_user_id():
-    # Placeholder: Replace with real authentication
     return 1
 
 parcels_bp = Blueprint('parcels', __name__)
@@ -52,8 +51,18 @@ def create_parcel():
 def list_parcels():
     db: Session = request.environ['db_session']
     user_id = get_current_user_id()
-    parcels = db.query(Parcel).filter_by(user_id=user_id).all()
-    return jsonify(parcel_schema.dump(parcels, many=True)), 200
+    page = request.args.get('page', default=1, type=int)
+    per_page = request.args.get('per_page', default=10, type=int)
+    query = db.query(Parcel).filter_by(user_id=user_id)
+    total = query.count()
+    parcels = query.offset((page - 1) * per_page).limit(per_page).all()
+    return jsonify({
+        'parcels': parcel_schema.dump(parcels, many=True),
+        'page': page,
+        'per_page': per_page,
+        'total': total,
+        'total_pages': (total + per_page - 1) // per_page
+    }), 200
 
 @parcels_bp.route('/parcels/<int:parcel_id>', methods=['GET'])
 def get_parcel(parcel_id):
