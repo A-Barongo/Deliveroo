@@ -19,8 +19,10 @@ def create_parcel():
         validated = parcel_schema.load(data)
     except Exception as err:
         return jsonify({'error': str(err)}), 400
-    cost = calculate_parcel_cost(data.get('weight', 1))
+    weight = validated.get('weight', 1)
+    cost = calculate_parcel_cost(weight)
     parcel = Parcel(
+        weight=weight,
         description=validated['description'],
         status='pending',
         sender_name=validated['sender_name'],
