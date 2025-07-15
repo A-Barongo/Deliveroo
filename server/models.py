@@ -47,6 +47,7 @@ class Parcel(Base):
     def to_dict(self):
         return {
             'id': self.id,
+            'weight': self.weight,
             'description': self.description,
             'status': self.status,
             'sender_name': self.sender_name,
