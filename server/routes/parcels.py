@@ -1,102 +1,85 @@
 # this file has all the code for parcels api
 # we use blueprint to keep things together
 
-from flask import Blueprint, request, jsonify, g
-from server.models import Parcel
-from server.schemas import ParcelSchema
-from server.helpers import calculate_parcel_cost
+from flask import request
+from flask_restful import Resource
 from sqlalchemy.exc import SQLAlchemyError
+from models import Parcel
+from config import db
 
-# make a blueprint for parcels
-parcels_bp = Blueprint('parcels', __name__)
+class ParcelList(Resource):
+    def get(self):
+        # get all parcels with pagination
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 10))
+        query = db.session.query(Parcel)
+        total = query.count()
+        parcels = query.offset((page - 1) * per_page).limit(per_page).all()
+        return {
+            "parcels": [p.to_dict() for p in parcels],
+            "page": page,
+            "per_page": per_page,
+            "total": total
+        }, 200
 
-# make schemas for turning parcel to json
-parcel_schema = ParcelSchema()
-parcels_schema = ParcelSchema(many=True)
+    def post(self):
+        # create a new parcel
+        data = request.get_json()
+        try:
+            parcel = Parcel(**data)
+            # cost calculation logic here if needed
+            db.session.add(parcel)
+            db.session.commit()
+            return parcel.to_dict(), 201
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": str(e)}, 500
 
-# make a new parcel
-@parcels_bp.route('/parcels', methods=['POST'])
-def create_parcel():
-    # this makes a new parcel from json data
-    data = request.get_json() # get data from user
-    errors = parcel_schema.validate(data) # check if data is ok
-    if errors:
-        return {"error": errors}, 400 # if not ok tell user
-    try:
-        parcel = Parcel(**data) # make parcel
-        parcel.cost = calculate_parcel_cost(parcel.weight) # set cost
-        g.db_session.add(parcel) # add to database
-        g.db_session.commit() # save to database
-        return parcel_schema.dump(parcel), 201 # send back the new parcel
-    except SQLAlchemyError as e:
-        g.db_session.rollback() # if error undo
-        return {"error": str(e)}, 500 # tell user error
+class ParcelResource(Resource):
+    def get(self, parcel_id):
+        # get one parcel by id
+        parcel = db.session.query(Parcel).get(parcel_id)
+        if not parcel:
+            return {"error": "parcel not found"}, 404
+        return parcel.to_dict(), 200
 
-# get all parcels with pages
-@parcels_bp.route('/parcels', methods=['GET'])
-def list_parcels():
-    # this gets all parcels but not too many at once
-    page = int(request.args.get('page', 1)) # which page
-    per_page = int(request.args.get('per_page', 10)) # how many per page
-    query = g.db_session.query(Parcel)
-    total = query.count() # how many parcels in total
-    parcels = query.offset((page - 1) * per_page).limit(per_page).all() # get some parcels
-    return {
-        "parcels": parcels_schema.dump(parcels),
-        "page": page,
-        "per_page": per_page,
-        "total": total
-    }, 200 # send back parcels
+class ParcelCancel(Resource):
+    def patch(self, parcel_id):
+        # cancel a parcel
+        parcel = db.session.query(Parcel).get(parcel_id)
+        if not parcel:
+            return {"error": "parcel not found"}, 404
+        if parcel.status != 'pending':
+            return {"error": "only pending parcels can be cancelled"}, 400
+        parcel.status = 'cancelled'
+        db.session.commit()
+        return parcel.to_dict(), 200
 
-# get one parcel by id
-@parcels_bp.route('/parcels/<int:parcel_id>', methods=['GET'])
-def get_parcel(parcel_id):
-    # this gets one parcel if it exists
-    parcel = g.db_session.query(Parcel).get(parcel_id)
-    if not parcel:
-        return {"error": "parcel not found"}, 404 # if not found tell user
-    return parcel_schema.dump(parcel), 200 # send back parcel
+class ParcelDestination(Resource):
+    def patch(self, parcel_id):
+        # edit destination
+        parcel = db.session.query(Parcel).get(parcel_id)
+        if not parcel:
+            return {"error": "parcel not found"}, 404
+        if parcel.status != 'pending':
+            return {"error": "only pending parcels can be edited"}, 400
+        data = request.get_json()
+        for field in ["destination_location_text", "destination_longitude", "destination_latitude"]:
+            if field in data:
+                setattr(parcel, field, data[field])
+        db.session.commit()
+        return parcel.to_dict(), 200
 
-# cancel a parcel
-@parcels_bp.route('/parcels/<int:parcel_id>/cancel', methods=['PATCH'])
-def cancel_parcel(parcel_id):
-    # this cancels a parcel if it is pending
-    parcel = g.db_session.query(Parcel).get(parcel_id)
-    if not parcel:
-        return {"error": "parcel not found"}, 404 # if not found tell user
-    if parcel.status != 'pending':
-        return {"error": "only pending parcels can be cancelled"}, 400 # only pending can cancel
-    parcel.status = 'cancelled' # set status to cancelled
-    g.db_session.commit() # save
-    return parcel_schema.dump(parcel), 200 # send back parcel
-
-# change where parcel goes
-@parcels_bp.route('/parcels/<int:parcel_id>/destination', methods=['PATCH'])
-def edit_destination(parcel_id):
-    # this changes the destination if parcel is pending
-    parcel = g.db_session.query(Parcel).get(parcel_id)
-    if not parcel:
-        return {"error": "parcel not found"}, 404 # if not found tell user
-    if parcel.status != 'pending':
-        return {"error": "only pending parcels can be edited"}, 400 # only pending can edit
-    data = request.get_json() # get new data
-    for field in ["destination_location_text", "destination_longitude", "destination_latitude"]:
-        if field in data:
-            setattr(parcel, field, data[field]) # change the field
-    g.db_session.commit() # save
-    return parcel_schema.dump(parcel), 200 # send back parcel
-
-# change status of parcel
-@parcels_bp.route('/parcels/<int:parcel_id>/status', methods=['PATCH'])
-def change_status(parcel_id):
-    # this changes the status like to delivered
-    parcel = g.db_session.query(Parcel).get(parcel_id)
-    if not parcel:
-        return {"error": "parcel not found"}, 404 # if not found tell user
-    data = request.get_json() # get new status
-    new_status = data.get('status')
-    if not new_status:
-        return {"error": "missing status field"}, 400 # need status
-    parcel.status = new_status # set new status
-    g.db_session.commit() # save
-    return parcel_schema.dump(parcel), 200 # send back parcel 
+class ParcelStatus(Resource):
+    def patch(self, parcel_id):
+        # change status
+        parcel = db.session.query(Parcel).get(parcel_id)
+        if not parcel:
+            return {"error": "parcel not found"}, 404
+        data = request.get_json()
+        new_status = data.get('status')
+        if not new_status:
+            return {"error": "missing status field"}, 400
+        parcel.status = new_status
+        db.session.commit()
+        return parcel.to_dict(), 200 
