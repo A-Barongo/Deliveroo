@@ -23,55 +23,64 @@ class User(db.Model):
             raise ValueError("Email must contain '@' and end with '.com'")
         return value
 
-    @hybrid_property
+    @hybrid_property  # type: ignore
     def password(self):
         raise Exception('Password hashes may not be viewed.')
 
-    @password.setter
-    def password(self, password):
-        hashed = bcrypt.generate_password_hash(password.encode('utf-8'))
+    @password.setter  # type: ignore
+    def password(self, value):
+        hashed = bcrypt.generate_password_hash(value.encode('utf-8'))
         self._password = hashed.decode('utf-8')
 
     def authenticate(self, password):
         return bcrypt.check_password_hash(self._password, password.encode('utf-8'))
 
     def to_dict(self):
-        return {
-            "id": self.id,
-            "username": self.username,
-            "email": self.email,
-            "phone_number": self.phone_number,
-            "admin": self.admin,
-            "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S")
-        }
+        result = {}
+        for c in self.__mapper__.c:  # type: ignore
+            value = getattr(self, c.name)
+            if isinstance(value, datetime):
+                result[c.name] = value.isoformat()
+            else:
+                result[c.name] = value
+        return result
 
 class Parcel(db.Model):
     __tablename__ = 'parcels'
-
     id = db.Column(db.Integer, primary_key=True)
-    destination = db.Column(db.String, nullable=False)
-    present_location = db.Column(db.String, nullable=False)
-    status = db.Column(db.String, default='pending')
-    weight = db.Column(db.Float, nullable=False)
-    cost = db.Column(db.Float, nullable=False)
+    description = db.Column(db.String(255))
+    weight = db.Column(db.Float)
+    status = db.Column(db.String(32), default='pending')
+    sender_name = db.Column(db.String(64))
+    sender_phone_number = db.Column(db.String(32))
+    pickup_location_text = db.Column(db.String(255))
+    destination_location_text = db.Column(db.String(255))
+    pick_up_longitude = db.Column(db.Float)
+    pick_up_latitude = db.Column(db.Float)
+    destination_longitude = db.Column(db.Float)
+    destination_latitude = db.Column(db.Float)
+    current_location_longitude = db.Column(db.Float)
+    current_location_latitude = db.Column(db.Float)
+    distance = db.Column(db.Float)
+    cost = db.Column(db.Float)
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
-
+    recipient_name = db.Column(db.String(64))
+    recipient_phone_number = db.Column(db.String(32))
+    courier_id = db.Column(db.Integer)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
     user = db.relationship('User', backref='parcels')
 
     def to_dict(self):
-        return {
-            "id": self.id,
-            "destination": self.destination,
-            "present_location": self.present_location,
-            "status": self.status,
-            "weight": self.weight,
-            "cost": self.cost,
-            "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-            "updated_at": self.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
-            "user_id": self.user_id
-        }
+        result = {}
+        for c in self.__mapper__.c:  # type: ignore
+            value = getattr(self, c.name)
+            if isinstance(value, datetime):
+                result[c.name] = value.isoformat()
+            else:
+                result[c.name] = value
+        return result
 
 class ParcelHistory(db.Model):
     __tablename__ = 'parcel_histories'

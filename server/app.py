@@ -10,6 +10,7 @@ from server.routes.admin_routes import (
     ParcelHistoryList, ParcelHistoryDetail
 )
 from server.routes.profile import Signup, Logout, Profile
+from server.routes.parcels import ParcelList, ParcelResource, ParcelCancel, ParcelDestination, ParcelStatus
 
 # Register routes
 api.add_resource(Signup, '/signup')
@@ -22,6 +23,12 @@ api.add_resource(UpdateParcelLocation, '/admin/parcels/<int:id>/location')
 api.add_resource(ParcelHistoryList, '/admin/histories')
 api.add_resource(ParcelHistoryDetail, '/admin/histories/<int:id>')
 
-if __name__ == '__main__':
-    app.run(port=5001, debug=True)
+# Parcel routes
+api.add_resource(ParcelList, '/parcels')
+api.add_resource(ParcelResource, '/parcels/<int:parcel_id>')
+api.add_resource(ParcelCancel, '/parcels/<int:parcel_id>/cancel')
+api.add_resource(ParcelDestination, '/parcels/<int:parcel_id>/destination')
+api.add_resource(ParcelStatus, '/parcels/<int:parcel_id>/status')
 
+if __name__ == '__main__':
+    app.run(port=5000, debug=True)
