@@ -30,16 +30,13 @@ bcrypt = Bcrypt(app)
 api = Api(app)
 CORS(app, supports_credentials=True)
 
-# Add JWT config
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
 app.config['JWT_BLACKLIST_ENABLED'] = True
 app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access']
 
-# Initialize JWT
 jwt = JWTManager(app)
-
-# Blacklist setup 
+ 
 blacklist = set()
 
 @jwt.token_in_blocklist_loader

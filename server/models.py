@@ -1,5 +1,3 @@
-# this file has the database tables for the app
-# we use sqlalchemy to make tables
 
 from config import db
 from datetime import datetime, timezone
