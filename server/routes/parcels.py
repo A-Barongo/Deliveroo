@@ -2,8 +2,8 @@
 from flask import request
 from flask_restful import Resource
 from sqlalchemy.exc import SQLAlchemyError
-from models import Parcel
-from config import db
+from server.models import Parcel
+from server.config import db
 
 class ParcelList(Resource):
     def get(self):
