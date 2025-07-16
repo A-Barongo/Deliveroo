@@ -1,114 +1,102 @@
-from flask import Blueprint, request, jsonify
-from sqlalchemy.orm import Session
-from ..models import Parcel
-from ..helpers import calculate_parcel_cost
-from ..schemas import ParcelSchema
-from datetime import datetime
+# this file has all the code for parcels api
+# we use blueprint to keep things together
 
-def get_current_user_id():
-    return 1
+from flask import Blueprint, request, jsonify, g
+from server.models import Parcel
+from server.schemas import ParcelSchema
+from server.helpers import calculate_parcel_cost
+from sqlalchemy.exc import SQLAlchemyError
 
+# make a blueprint for parcels
 parcels_bp = Blueprint('parcels', __name__)
-parcel_schema = ParcelSchema()
 
+# make schemas for turning parcel to json
+parcel_schema = ParcelSchema()
+parcels_schema = ParcelSchema(many=True)
+
+# make a new parcel
 @parcels_bp.route('/parcels', methods=['POST'])
 def create_parcel():
-    data = request.get_json()
-    weight = data.get('weight', 1)
-    cost = calculate_parcel_cost(weight)
-    parcel = Parcel(
-        description=data.get('description'),
-        weight=weight,
-        status='pending',
-        sender_name=data.get('sender_name'),
-        sender_phone_number=data.get('sender_phone_number'),
-        pickup_location_text=data.get('pickup_location_text'),
-        destination_location_text=data.get('destination_location_text'),
-        pick_up_longitude=data.get('pick_up_longitude'),
-        pick_up_latitude=data.get('pick_up_latitude'),
-        destination_longitude=data.get('destination_longitude'),
-        destination_latitude=data.get('destination_latitude'),
-        current_location_longitude=data.get('current_location_longitude'),
-        current_location_latitude=data.get('current_location_latitude'),
-        distance=data.get('distance'),
-        cost=cost,
-        recipient_name=data.get('recipient_name'),
-        recipient_phone_number=data.get('recipient_phone_number'),
-        courier_id=data.get('courier_id'),
-        user_id=get_current_user_id()
-    )
-    db: Session = request.environ['db_session']
-    db.add(parcel)
-    db.commit()
-    db.refresh(parcel)
-    return parcel_schema.dump(parcel), 201
+    # this makes a new parcel from json data
+    data = request.get_json() # get data from user
+    errors = parcel_schema.validate(data) # check if data is ok
+    if errors:
+        return {"error": errors}, 400 # if not ok tell user
+    try:
+        parcel = Parcel(**data) # make parcel
+        parcel.cost = calculate_parcel_cost(parcel.weight) # set cost
+        g.db_session.add(parcel) # add to database
+        g.db_session.commit() # save to database
+        return parcel_schema.dump(parcel), 201 # send back the new parcel
+    except SQLAlchemyError as e:
+        g.db_session.rollback() # if error undo
+        return {"error": str(e)}, 500 # tell user error
 
+# get all parcels with pages
 @parcels_bp.route('/parcels', methods=['GET'])
 def list_parcels():
-    db: Session = request.environ['db_session']
-    user_id = get_current_user_id()
-    page = request.args.get('page', default=1, type=int)
-    per_page = request.args.get('per_page', default=10, type=int)
-    query = db.query(Parcel).filter_by(user_id=user_id)
-    total = query.count()
-    parcels = query.offset((page - 1) * per_page).limit(per_page).all()
-    return jsonify({
-        'parcels': parcel_schema.dump(parcels, many=True),
-        'page': page,
-        'per_page': per_page,
-        'total': total,
-        'total_pages': (total + per_page - 1) // per_page
-    }), 200
+    # this gets all parcels but not too many at once
+    page = int(request.args.get('page', 1)) # which page
+    per_page = int(request.args.get('per_page', 10)) # how many per page
+    query = g.db_session.query(Parcel)
+    total = query.count() # how many parcels in total
+    parcels = query.offset((page - 1) * per_page).limit(per_page).all() # get some parcels
+    return {
+        "parcels": parcels_schema.dump(parcels),
+        "page": page,
+        "per_page": per_page,
+        "total": total
+    }, 200 # send back parcels
 
+# get one parcel by id
 @parcels_bp.route('/parcels/<int:parcel_id>', methods=['GET'])
 def get_parcel(parcel_id):
-    db: Session = request.environ['db_session']
-    parcel = db.query(Parcel).filter_by(id=parcel_id, user_id=get_current_user_id()).first()
+    # this gets one parcel if it exists
+    parcel = g.db_session.query(Parcel).get(parcel_id)
     if not parcel:
-        return jsonify({'error': 'Parcel not found'}), 404
-    return parcel_schema.dump(parcel), 200
+        return {"error": "parcel not found"}, 404 # if not found tell user
+    return parcel_schema.dump(parcel), 200 # send back parcel
 
+# cancel a parcel
 @parcels_bp.route('/parcels/<int:parcel_id>/cancel', methods=['PATCH'])
 def cancel_parcel(parcel_id):
-    db: Session = request.environ['db_session']
-    parcel = db.query(Parcel).filter_by(id=parcel_id, user_id=get_current_user_id()).first()
+    # this cancels a parcel if it is pending
+    parcel = g.db_session.query(Parcel).get(parcel_id)
     if not parcel:
-        return jsonify({'error': 'Parcel not found'}), 404
-    if parcel.status == 'delivered':
-        return jsonify({'error': 'Cannot cancel delivered parcel'}), 400
-    parcel.status = 'cancelled'
-    parcel.updated_at = datetime.utcnow()
-    db.commit()
-    return parcel_schema.dump(parcel), 200
+        return {"error": "parcel not found"}, 404 # if not found tell user
+    if parcel.status != 'pending':
+        return {"error": "only pending parcels can be cancelled"}, 400 # only pending can cancel
+    parcel.status = 'cancelled' # set status to cancelled
+    g.db_session.commit() # save
+    return parcel_schema.dump(parcel), 200 # send back parcel
 
+# change where parcel goes
 @parcels_bp.route('/parcels/<int:parcel_id>/destination', methods=['PATCH'])
-def edit_parcel_destination(parcel_id):
-    db: Session = request.environ['db_session']
-    parcel = db.query(Parcel).filter_by(id=parcel_id, user_id=get_current_user_id()).first()
+def edit_destination(parcel_id):
+    # this changes the destination if parcel is pending
+    parcel = g.db_session.query(Parcel).get(parcel_id)
     if not parcel:
-        return jsonify({'error': 'Parcel not found'}), 404
-    if parcel.status == 'delivered':
-        return jsonify({'error': 'Cannot edit delivered parcel'}), 400
-    data = request.get_json()
-    new_destination = data.get('destination_location_text')
-    if not new_destination:
-        return jsonify({'error': 'destination_location_text required'}), 400
-    parcel.destination_location_text = new_destination
-    parcel.updated_at = datetime.utcnow()
-    db.commit()
-    return parcel_schema.dump(parcel), 200
+        return {"error": "parcel not found"}, 404 # if not found tell user
+    if parcel.status != 'pending':
+        return {"error": "only pending parcels can be edited"}, 400 # only pending can edit
+    data = request.get_json() # get new data
+    for field in ["destination_location_text", "destination_longitude", "destination_latitude"]:
+        if field in data:
+            setattr(parcel, field, data[field]) # change the field
+    g.db_session.commit() # save
+    return parcel_schema.dump(parcel), 200 # send back parcel
 
+# change status of parcel
 @parcels_bp.route('/parcels/<int:parcel_id>/status', methods=['PATCH'])
-def update_parcel_status(parcel_id):
-    db: Session = request.environ['db_session']
-    parcel = db.query(Parcel).filter_by(id=parcel_id, user_id=get_current_user_id()).first()
+def change_status(parcel_id):
+    # this changes the status like to delivered
+    parcel = g.db_session.query(Parcel).get(parcel_id)
     if not parcel:
-        return jsonify({'error': 'Parcel not found'}), 404
-    data = request.get_json()
+        return {"error": "parcel not found"}, 404 # if not found tell user
+    data = request.get_json() # get new status
     new_status = data.get('status')
     if not new_status:
-        return jsonify({'error': 'status required'}), 400
-    parcel.status = new_status
-    parcel.updated_at = datetime.utcnow()
-    db.commit()
-    return parcel_schema.dump(parcel), 200 
+        return {"error": "missing status field"}, 400 # need status
+    parcel.status = new_status # set new status
+    g.db_session.commit() # save
+    return parcel_schema.dump(parcel), 200 # send back parcel 
