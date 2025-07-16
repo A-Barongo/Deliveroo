@@ -28,4 +28,11 @@ class Parcel(db.Model):
     user_id = db.Column(db.Integer)
 
     def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        result = {}
+        for c in self.__table__.columns:
+            value = getattr(self, c.name)
+            if isinstance(value, datetime):
+                result[c.name] = value.isoformat()
+            else:
+                result[c.name] = value
+        return result
