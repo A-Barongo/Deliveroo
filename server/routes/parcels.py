@@ -1,5 +1,3 @@
-# this file has all the code for parcels api
-# we use blueprint to keep things together
 
 from flask import request
 from flask_restful import Resource
@@ -9,7 +7,6 @@ from config import db
 
 class ParcelList(Resource):
     def get(self):
-        # get all parcels with pagination
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 10))
         query = db.session.query(Parcel)
@@ -23,11 +20,9 @@ class ParcelList(Resource):
         }, 200
 
     def post(self):
-        # create a new parcel
         data = request.get_json()
         try:
             parcel = Parcel(**data)
-            # cost calculation logic here if needed
             db.session.add(parcel)
             db.session.commit()
             return parcel.to_dict(), 201
@@ -37,7 +32,6 @@ class ParcelList(Resource):
 
 class ParcelResource(Resource):
     def get(self, parcel_id):
-        # get one parcel by id
         parcel = db.session.query(Parcel).get(parcel_id)
         if not parcel:
             return {"error": "parcel not found"}, 404
@@ -45,7 +39,6 @@ class ParcelResource(Resource):
 
 class ParcelCancel(Resource):
     def patch(self, parcel_id):
-        # cancel a parcel
         parcel = db.session.query(Parcel).get(parcel_id)
         if not parcel:
             return {"error": "parcel not found"}, 404
@@ -57,7 +50,6 @@ class ParcelCancel(Resource):
 
 class ParcelDestination(Resource):
     def patch(self, parcel_id):
-        # edit destination
         parcel = db.session.query(Parcel).get(parcel_id)
         if not parcel:
             return {"error": "parcel not found"}, 404
@@ -72,7 +64,6 @@ class ParcelDestination(Resource):
 
 class ParcelStatus(Resource):
     def patch(self, parcel_id):
-        # change status
         parcel = db.session.query(Parcel).get(parcel_id)
         if not parcel:
             return {"error": "parcel not found"}, 404
