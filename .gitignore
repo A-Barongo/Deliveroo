@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Python
 __pycache__/
 *.pyc
@@ -20,3 +21,10 @@ deliveroo.db
 .vscode/
 .idea/
 .DS_Store
+=======
+.db
+instance
+migrations 
+.env
+venv
+>>>>>>> main

@@ -7,9 +7,21 @@ name = "pypi"
 marshmallow = "*"
 pytest = "*"
 flask = "*"
+flask-sqlalchemy = "*"
+flask-migrate = "*"
+psycopg2-binary = "*"
+flask-jwt-extended = "*"
+flask-cors = "*"
+requests = "*"
+python-dotenv = "*"
+flask-restful = "*"
 sqlalchemy = "*"
+sqlalchemy-serializer = "*"
 
 [dev-packages]
+pytest = "*"
+pytest-flask = "*"
+coverage = "*"
 
 [requires]
 python_version = "3.12"

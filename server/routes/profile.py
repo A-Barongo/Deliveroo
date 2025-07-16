@@ -1,0 +1,72 @@
+from flask import request,make_response,jsonify
+from flask_restful import Resource
+from sqlalchemy.exc import IntegrityError
+
+from server.models import User#,Parcel,ParcelHistory
+from flask_jwt_extended import create_access_token,jwt_required, get_jwt,get_jwt_identity
+from server.config import blacklist,db 
+
+class Signup(Resource):
+    def post(self):
+        data = request.get_json()
+
+        try:
+            user = User(
+                username=data['username'],
+                email=data['email'],
+                admin=data.get('admin', False),
+                phone_number=data['phone_number']
+            )
+            user.password = data['password']  
+
+            db.session.add(user)
+            db.session.commit()
+
+            access_token = create_access_token(identity=user.id)
+
+            return {
+                "user": user.to_dict(),
+                "access_token": access_token
+            }, 201
+
+        except Exception as e:
+            db.session.rollback()
+            print(str(e))
+            return {'error': 'Signup failed'}, 422
+
+
+class Login(Resource):
+    def post(self):
+        data = request.get_json()
+
+        username = data.get('username')
+        password = data.get('password')
+
+        if not username or not password:
+            return {'error': 'Missing credentials'}, 400
+
+        user = User.query.filter_by(username=username).first()
+
+        if user and user.authenticate(password):
+            access_token = create_access_token(identity=user.id)
+            return {
+                "user": user.to_dict(),
+                "access_token": access_token
+            }, 200
+
+        return {'error': 'Unauthorized'}, 401
+    
+class Profile(Resource):
+    @jwt_required()
+    def get(self):
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        if user:
+            return user.to_dict(), 200
+        return {'error': 'User not found'}, 404
+class Logout(Resource):
+    @jwt_required()
+    def post(self):
+        jti = get_jwt()["jti"]  
+        blacklist.add(jti)
+        return {"message": "Successfully logged out"}, 200
