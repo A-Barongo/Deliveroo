@@ -1,4 +1,3 @@
-# server/models.py
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import validates
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -20,7 +19,7 @@ class User(db.Model):
 
     @validates('email')
     def validate_email(self, key, value):
-        if '@' not in value and '.com' not in value:
+        if '@' not in value or not value.endswith('.com'):
             raise ValueError("Email must contain '@' and end with '.com'")
         return value
 
@@ -45,7 +44,6 @@ class User(db.Model):
             "admin": self.admin,
             "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S")
         }
-
 
 class Parcel(db.Model):
     __tablename__ = 'parcels'
@@ -75,7 +73,6 @@ class Parcel(db.Model):
             "user_id": self.user_id
         }
 
-
 class ParcelHistory(db.Model):
     __tablename__ = 'parcel_histories'
 
@@ -100,4 +97,3 @@ class ParcelHistory(db.Model):
             "new_value": self.new_value,
             "timestamp": self.timestamp.strftime("%Y-%m-%d %H:%M:%S")
         }
-
