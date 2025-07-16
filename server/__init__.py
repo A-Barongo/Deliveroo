@@ -8,7 +8,7 @@ from .models import Base
 from .routes.parcels import parcels_bp
 import os
 
-# get database url from env or use sqlite
+# get database url from env right now it is sqlite
 DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///deliveroo.db')
 
 def create_app():
