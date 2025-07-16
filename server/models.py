@@ -5,7 +5,7 @@ from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy.orm import validates
 from sqlalchemy.types import JSON
 from sqlalchemy.ext.hybrid import hybrid_property
-from config import  bcrypt,db
+from .config import  bcrypt,db
 from datetime import datetime, timezone
 
 class User(db.Model,SerializerMixin):
@@ -41,7 +41,37 @@ class User(db.Model,SerializerMixin):
     def authenticate(self, password):
         return bcrypt.check_password_hash(
             self._password, password.encode('utf-8'))
-class Parcel(db.Model,SerializerMixin):
-    pass
-class ParcelHistory(db.Model,SerializerMixin):
-    pass
+    
+class Parcel(db.Model, SerializerMixin):
+    __tablename__ = 'parcels'
+
+    id = db.Column(db.Integer, primary_key=True)
+    destination = db.Column(db.String, nullable=False)
+    present_location = db.Column(db.String, nullable=False)
+    status = db.Column(db.String, default='pending')
+    weight = db.Column(db.Float, nullable=False)
+    cost = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
+
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    user = db.relationship('User', backref='parcels')
+
+
+class ParcelHistory(db.Model, SerializerMixin):
+    __tablename__ = 'parcel_histories'
+
+    id = db.Column(db.Integer, primary_key=True)
+    parcel_id = db.Column(db.Integer, db.ForeignKey('parcels.id'), nullable=False)
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    update_type = db.Column(db.String, nullable=False)  # e.g., "status", "location"
+    old_value = db.Column(db.String)
+    new_value = db.Column(db.String)
+    timestamp = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+
+    # Relationships
+    user = db.relationship('User', backref='history_updates')
+    parcel = db.relationship('Parcel', backref='history')
+
+    serialize_rules = ('-user._password', '-user.history_updates', '-parcel.history',)
