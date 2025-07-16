@@ -1,33 +1,40 @@
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-
 import json
+from uuid import uuid4
 from server.models import db, User, Parcel, ParcelHistory
 from server.app import app
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
+
+def unique_phone():
+    return f"{uuid4().int % 10**10:010d}"  # Always 10-digit number
+
 
 def create_admin_user():
+    phone = unique_phone()
     admin = User(
-        username='admin',
-        email='admin@deliveroo.com',
-        phone_number='1111111111',
+        username=f"admin_{uuid4().hex[:6]}",
+        email=f"admin_{uuid4().hex[:6]}@deliveroo.com",
+        phone_number=phone,
         admin=True
     )
-    admin.password = 'adminpass' 
+    admin.password = 'adminpass'
     db.session.add(admin)
     db.session.commit()
     return admin
 
 
 def create_normal_user():
+    phone = unique_phone()
     user = User(
-        username='user1',
-        email='user1@deliveroo.com',
-        phone_number='2222222222',
+        username=f"user_{uuid4().hex[:6]}",
+        email=f"user_{uuid4().hex[:6]}@deliveroo.com",
+        phone_number=phone,
         admin=False
     )
-    user.password = 'userpass' 
+    user.password = 'userpass'
     db.session.add(user)
     db.session.commit()
     return user
@@ -46,6 +53,7 @@ def create_parcel(owner):
     db.session.commit()
     return parcel
 
+
 def get_token(client, user):
     response = client.post('/login', json={
         "username": user.username,
@@ -56,6 +64,7 @@ def get_token(client, user):
     return response.get_json()["access_token"]
 
 
+# ---------------------- TESTS ----------------------
 
 def test_admin_can_view_all_parcels(client):
     admin = create_admin_user()
@@ -121,20 +130,19 @@ def test_admin_can_view_parcel_history(client):
     admin = create_admin_user()
     user = create_normal_user()
     parcel = create_parcel(user)
-
     token = get_token(client, admin)
 
-    # Admin updates status to create a history record
+    # Create history
     client.patch(f'/admin/parcels/{parcel.id}/status',
                  headers={"Authorization": f"Bearer {token}"},
                  json={"status": "in-transit"})
 
-    # Check history route
+    # Check history
     response = client.get('/admin/histories', headers={
         "Authorization": f"Bearer {token}"
     })
 
     assert response.status_code == 200
     data = response.get_json()
-    assert len(data) >= 1
     assert any(h["parcel_id"] == parcel.id for h in data)
+

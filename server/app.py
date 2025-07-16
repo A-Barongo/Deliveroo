@@ -9,7 +9,7 @@ from server.routes.admin_routes import (
     AdminParcelList, UpdateParcelStatus, UpdateParcelLocation,
     ParcelHistoryList, ParcelHistoryDetail
 )
-from routes.profile import Signup, Logout, Profile
+from server.routes.profile import Signup, Logout, Profile
 
 # Register routes
 api.add_resource(Signup, '/signup')
