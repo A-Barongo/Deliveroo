@@ -1,8 +1,8 @@
 import pytest
 from flask import Flask
-from . import create_app
-from .models import Base, Parcel, User
-from .helpers import calculate_parcel_cost
+from server import create_app
+from server.models import Base, Parcel, User
+from server.helpers import calculate_parcel_cost
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -115,4 +115,3 @@ def test_pagination(client, db_session, monkeypatch):
     assert result['per_page'] == 10
     assert result['total'] >= 15
     assert isinstance(result['parcels'], list)
-

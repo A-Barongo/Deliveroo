@@ -1,6 +1,5 @@
 # this file has schemas for turning database stuff to json and checking data
 # we use marshmallow for this
-
 from marshmallow import Schema, fields
 
 # this is the schema for parcel
