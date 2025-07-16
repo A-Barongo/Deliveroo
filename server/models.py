@@ -19,7 +19,6 @@ class User(db.Model,SerializerMixin):
     latitude_hash = db.Column(db.Text)
     _password=db.Column(db.String, nullable=False)
     admin=db.Column(db.Boolean, default=False)
-    created_at=db.Column(db.String,nullable=False,unique=True)
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
   
     @validates('email')
@@ -41,7 +40,9 @@ class User(db.Model,SerializerMixin):
     def authenticate(self, password):
         return bcrypt.check_password_hash(
             self._password, password.encode('utf-8'))
-class Parcel(db.Model,SerializerMixin):
-    pass
-class ParcelHistory(db.Model,SerializerMixin):
-    pass
+        
+        
+#class Parcel(db.Model,SerializerMixin):
+ #   pass
+#class ParcelHistory(db.Model,SerializerMixin):
+ #   pass
