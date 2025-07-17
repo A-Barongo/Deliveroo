@@ -17,7 +17,8 @@ app = Flask(__name__)
 
 # 2. Config
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-super-secret-key')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI', 'sqlite:///app.db')
+#app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI')
+app.config['SQLALCHEMY_DATABASE_URI'] ='sqlite:////home/prizrak917/MORINGA/phase-5/Deliveroo/server/app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'your-secret-jwt-key')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
@@ -30,9 +31,12 @@ app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access']
 metadata = MetaData(naming_convention={
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
 })
+
+
 db = SQLAlchemy(metadata=metadata)
-migrate = Migrate(app, db)
 db.init_app(app)
+migrate = Migrate(app, db)
+
 
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)

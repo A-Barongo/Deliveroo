@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import validates
 from sqlalchemy.ext.hybrid import hybrid_property
-from server.config import bcrypt, db
+from config import bcrypt, db
 from datetime import datetime, timezone
 
 class User(db.Model):
