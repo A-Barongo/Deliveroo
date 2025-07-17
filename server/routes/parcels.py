@@ -4,6 +4,7 @@ from flask_restful import Resource
 from sqlalchemy.exc import SQLAlchemyError
 from models import Parcel
 from config import db
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 class ParcelList(Resource):
     def get(self):
@@ -38,12 +39,20 @@ class ParcelResource(Resource):
         return parcel.to_dict(), 200
 
 class ParcelCancel(Resource):
+    @jwt_required()
     def patch(self, parcel_id):
+        current_user_id = get_jwt_identity()
         parcel = db.session.query(Parcel).get(parcel_id)
+
         if not parcel:
             return {"error": "parcel not found"}, 404
+
+        if parcel.user_id != current_user_id:
+            return {"error": "You can only cancel parcels you created"}, 403
+
         if parcel.status != 'pending':
-            return {"error": "only pending parcels can be cancelled"}, 400
+            return {"error": "Only pending parcels can be cancelled"}, 400
+
         parcel.status = 'cancelled'
         db.session.commit()
         return parcel.to_dict(), 200
@@ -53,8 +62,8 @@ class ParcelDestination(Resource):
         parcel = db.session.query(Parcel).get(parcel_id)
         if not parcel:
             return {"error": "parcel not found"}, 404
-        if parcel.status != 'pending':
-            return {"error": "only pending parcels can be edited"}, 400
+        if parcel.status== 'delivered':
+            return {"error": "Parcel destination cannot be changed after delivery"}, 400
         data = request.get_json()
         for field in ["destination_location_text", "destination_longitude", "destination_latitude"]:
             if field in data:
