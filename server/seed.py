@@ -1,5 +1,5 @@
+"""Seed script for Deliveroo app database."""
 # pyright: reportCallIssue=false
-"""Seed script for populating the database with initial data."""
 from random import choice, uniform
 from datetime import datetime
 from faker import Faker
@@ -10,7 +10,8 @@ app = create_app()
 
 fake = Faker()
 
-def seed_data():
+def seed_db():
+    """Seed the database with initial data."""
     with app.app_context():
         print("Clearing existing data...")
         ParcelHistory.query.delete()
@@ -84,4 +85,4 @@ def seed_data():
         print("Seeding complete!")
 
 if __name__ == '__main__':
-    seed_data()
+    seed_db()

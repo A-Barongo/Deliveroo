@@ -1,4 +1,4 @@
-"""Profile and authentication routes for Deliveroo API."""
+"""Profile routes for Deliveroo app."""
 from flask import request
 from flask_restful import Resource
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt, get_jwt_identity

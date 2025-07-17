@@ -1,25 +1,25 @@
+"""Tests for parcel-related endpoints in Deliveroo app."""
 import sys
 import os
-import json
 from uuid import uuid4
-from server.models import db, User, Parcel, ParcelHistory
-from server.app import app
+from server.config import db
+from server.models import User, Parcel, ParcelHistory
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 
 def unique_phone():
-    return f"{uuid4().int % 10**10:010d}"  # Always 10-digit number
+    """Generate a unique 10-digit phone number."""
+    return f"{uuid4().int % 10**10:010d}"
 
 
 def create_admin_user():
     phone = unique_phone()
-    admin = User(
-        username=f"admin_{uuid4().hex[:6]}",
-        email=f"admin_{uuid4().hex[:6]}@deliveroo.com",
-        phone_number=phone,
-        admin=True
-    )
+    admin = User()
+    admin.username = f"admin_{uuid4().hex[:6]}"
+    admin.email = f"admin_{uuid4().hex[:6]}@deliveroo.com"
+    admin.phone_number = phone
+    admin.admin = True
     admin.password = 'adminpass'
     db.session.add(admin)
     db.session.commit()
@@ -28,12 +28,11 @@ def create_admin_user():
 
 def create_normal_user():
     phone = unique_phone()
-    user = User(
-        username=f"user_{uuid4().hex[:6]}",
-        email=f"user_{uuid4().hex[:6]}@deliveroo.com",
-        phone_number=phone,
-        admin=False
-    )
+    user = User()
+    user.username = f"user_{uuid4().hex[:6]}"
+    user.email = f"user_{uuid4().hex[:6]}@deliveroo.com"
+    user.phone_number = phone
+    user.admin = False
     user.password = 'userpass'
     db.session.add(user)
     db.session.commit()
@@ -41,14 +40,13 @@ def create_normal_user():
 
 
 def create_parcel(owner):
-    parcel = Parcel(
-        user_id=owner.id,
-        status='pending',
-        present_location='Nairobi',
-        destination='Mombasa',
-        weight=2.5,
-        cost=100.0
-    )
+    parcel = Parcel()
+    parcel.user_id = owner.id
+    parcel.status = 'pending'
+    parcel.present_location = 'Nairobi'
+    parcel.destination = 'Mombasa'
+    parcel.weight = 2.5
+    parcel.cost = 100.0
     db.session.add(parcel)
     db.session.commit()
     return parcel

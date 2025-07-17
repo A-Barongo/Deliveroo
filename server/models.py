@@ -1,13 +1,13 @@
-# pyright: reportRedeclaration=false
-"""Database models for the Deliveroo application."""
+"""SQLAlchemy models for Deliveroo app."""
 from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import validates
 from sqlalchemy.ext.hybrid import hybrid_property
-from server.config import bcrypt, db
+from werkzeug.security import generate_password_hash, check_password_hash
+from server.config import db
 
 class User(db.Model):
-    """User model for application users."""
+    """User model for Deliveroo app."""
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -27,20 +27,13 @@ class User(db.Model):
             raise ValueError("Email must contain '@' and end with '.com'")
         return value
 
-    @hybrid_property  # type: ignore
-    def password(self):
-        """Prevent viewing the password hash."""
-        raise Exception('Password hashes may not be viewed.')
+    def set_password(self, password):
+        """Set hashed password for user."""
+        self._password = generate_password_hash(password)
 
-    @password.setter  # type: ignore
-    def password(self, value):
-        """Hash and set the user's password."""
-        hashed = bcrypt.generate_password_hash(value.encode('utf-8'))
-        self._password = hashed.decode('utf-8')
-
-    def authenticate(self, password):
+    def check_password(self, password):
         """Check if the provided password matches the stored hash."""
-        return bcrypt.check_password_hash(self._password, password.encode('utf-8'))
+        return check_password_hash(self._password, password)
 
     def to_dict(self):
         """Return a dictionary representation of the user."""
@@ -54,7 +47,7 @@ class User(db.Model):
         return result
 
 class Parcel(db.Model):
-    """Parcel model for deliveries."""
+    """Parcel model for Deliveroo app."""
     __tablename__ = 'parcels'
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.String(255))
@@ -93,13 +86,13 @@ class Parcel(db.Model):
         return result
 
     def calculate_cost(self):
-        """Calculate the cost of the parcel based on weight."""
+        """Calculate cost for the parcel."""
         if self.weight is not None:
             return self.weight * 150
         return 0
 
 class ParcelHistory(db.Model):
-    """History of parcel updates."""
+    """Parcel history model for Deliveroo app."""
     __tablename__ = 'parcel_histories'
 
     id = db.Column(db.Integer, primary_key=True)

@@ -1,6 +1,5 @@
-"""Tests for parcel logistics functionality."""
+"""Tests for parcel logistics endpoints in Deliveroo app."""
 import pytest
-from server.models import Parcel, User
 
 def valid_parcel_data():
     return {

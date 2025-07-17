@@ -1,3 +1,4 @@
+"""Pytest fixtures for Deliveroo app tests."""
 import pytest
 from server.config import create_app, db
 from server.models import User

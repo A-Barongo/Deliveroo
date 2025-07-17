@@ -1,6 +1,5 @@
 """Main application entry point for Deliveroo."""
-from server.config import create_app, db, api
-from server.models import User, Parcel, ParcelHistory
+from server.config import create_app, api
 from server.routes.auth_routes import Login
 from server.routes.admin_routes import (
     AdminParcelList, UpdateParcelStatus, UpdateParcelLocation,

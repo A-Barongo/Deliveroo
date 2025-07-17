@@ -1,4 +1,6 @@
+"""Configuration and app factory for Deliveroo Flask app."""
 import os
+from datetime import timedelta
 from flask import Flask
 from flask_bcrypt import Bcrypt
 from flask_migrate import Migrate
@@ -7,7 +9,6 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
-from datetime import timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -27,6 +28,7 @@ blacklist = set()
 
 # 2. App factory
 def create_app(test_config=None):
+    """Application factory for Flask app."""
     app = Flask(__name__)
 
     # Default config
@@ -51,6 +53,7 @@ def create_app(test_config=None):
 
     @jwt.token_in_blocklist_loader
     def check_if_token_revoked(jwt_header, jwt_payload):
+        """Check if JWT token is revoked."""
         return jwt_payload['jti'] in blacklist
 
     return app

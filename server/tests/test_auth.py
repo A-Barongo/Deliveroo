@@ -1,3 +1,4 @@
+"""Tests for authentication endpoints in Deliveroo app."""
 import pytest
 from flask_jwt_extended import decode_token
 from flask import json
