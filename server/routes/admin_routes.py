@@ -1,7 +1,7 @@
 from flask import request, jsonify
 from flask_restful import Resource
-from server.config import db
-from server.models import Parcel, User, ParcelHistory
+from config import db
+from models import Parcel, User, ParcelHistory
 from datetime import datetime, timezone
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
