@@ -15,6 +15,7 @@ requests = "*"
 python-dotenv = "*"
 flask-restful = "*"
 sqlalchemy-serializer = "*"
+flask-mail = "*"
 
 [dev-packages]
 pytest = "*"

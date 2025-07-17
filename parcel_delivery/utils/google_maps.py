@@ -7,7 +7,7 @@ class GoogleMapsService:
     def geocode(self, address):
         response = requests.get(
             'https://maps.googleapis.com/maps/api/geocode/json',
-            params={'address': address, 'key': self.api_key}
+            params={'address': address, 'key': self.api_key, 'region': 'us', 'language': 'en' }
         )
         data = response.json()
         if data['status'] == 'OK':

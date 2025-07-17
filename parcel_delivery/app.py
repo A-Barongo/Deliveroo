@@ -3,12 +3,43 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail
 from flask_cors import CORS
 from config import Config
+from flask_mail import Message
+from utils import GoogleMapsService, EmailService, CostCalculator
 
 app = Flask(__name__)
 app.config.from_object(Config)
 CORS(app)
 db = SQLAlchemy(app)
 mail = Mail(app)
+# Initialize services
+maps_service = GoogleMapsService(app.config['GOOGLE_MAPS_API_KEY'])
+email_service = EmailService(mail)
+cost_calculator = CostCalculator()
+
+@app.route('/')
+def home():
+    return "Parcel Delivery API is running"
+
+
+@app.route('/api/test')
+def test_route():
+    return jsonify({"status": "working"})
+
+@app.route('/test/maps')
+def test_maps():
+    test_address = "Statue of Liberty"
+    result = GoogleMapsService.geocode(test_address)
+    return jsonify(result)
+
+@app.route('/test/email')
+def test_email():
+    msg = Message(
+        "Test Email from Flask",
+        recipients=["evanocruse@gmail.com"],
+        body="This is a test email from your parcel delivery system"
+    )
+    mail.send(msg)
+    return "Test email sent"
 
 from utils.google_maps import GoogleMapsService
 from utils.email_service import EmailService
@@ -82,6 +113,3 @@ if __name__ == '__main__':
         db.create_all()
     app.run(debug=True)
 
-@app.route('/')
-def home():
-    return "Parcel Delivery API is running"
