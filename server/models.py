@@ -27,18 +27,27 @@ class User(db.Model):
             raise ValueError("Email must contain '@' and end with '.com'")
         return value
 
-    def set_password(self, password):
-        """Set hashed password for user."""
-        self._password = generate_password_hash(password)
+    @hybrid_property
+    def password(self):
+        """Prevent viewing the password hash."""
+        raise Exception('Password hashes may not be viewed.')
 
-    def check_password(self, password):
-        """Check if the provided password matches the stored hash."""
-        return check_password_hash(self._password, password)
+    @password.setter
+    def password(self, value):
+        if len(value) < 8:
+            raise ValueError("Password must be at least 8 characters long.")
+        from server.config import bcrypt
+        hashed = bcrypt.generate_password_hash(value.encode('utf-8'))
+        self._password = hashed.decode('utf-8')
+
+    def authenticate(self, password):
+        from server.config import bcrypt
+        return bcrypt.check_password_hash(self._password, password.encode('utf-8'))
 
     def to_dict(self):
         """Return a dictionary representation of the user."""
         result = {}
-        for c in self.__mapper__.c:  # type: ignore
+        for c in self.__mapper__.c:  
             value = getattr(self, c.name)
             if isinstance(value, datetime):
                 result[c.name] = value.isoformat()
@@ -61,6 +70,7 @@ class Parcel(db.Model):
     pick_up_latitude = db.Column(db.Float)
     destination_longitude = db.Column(db.Float)
     destination_latitude = db.Column(db.Float)
+    current_location = db.Column(db.String)
     current_location_longitude = db.Column(db.Float)
     current_location_latitude = db.Column(db.Float)
     distance = db.Column(db.Float)

@@ -43,8 +43,8 @@ def create_parcel(owner):
     parcel = Parcel()
     parcel.user_id = owner.id
     parcel.status = 'pending'
-    parcel.present_location = 'Nairobi'
-    parcel.destination = 'Mombasa'
+    parcel.current_location = 'Nairobi'
+    parcel.destination_location_text = 'Mombasa'
     parcel.weight = 2.5
     parcel.cost = 100.0
     db.session.add(parcel)
@@ -97,6 +97,7 @@ def test_admin_can_update_status_and_creates_history(client):
 
     assert response.status_code == 200
     updated = Parcel.query.get(parcel.id)
+    assert updated is not None
     assert updated.status == "in-transit"
 
     history = ParcelHistory.query.filter_by(parcel_id=parcel.id).first()
@@ -112,12 +113,13 @@ def test_admin_can_update_location_and_creates_history(client):
 
     response = client.patch(f'/admin/parcels/{parcel.id}/location',
         headers={"Authorization": f"Bearer {token}"},
-        json={"present_location": "Kisumu"}
+        json={"current_location": "Kisumu"}
     )
 
     assert response.status_code == 200
     updated = Parcel.query.get(parcel.id)
-    assert updated.present_location == "Kisumu"
+    assert updated is not None
+    assert updated.current_location == "Kisumu"
 
     history = ParcelHistory.query.filter_by(parcel_id=parcel.id).first()
     assert history is not None

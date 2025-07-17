@@ -1,14 +1,13 @@
 """Seed script for Deliveroo app database."""
 # pyright: reportCallIssue=false
-from random import choice, uniform
-from datetime import datetime
 from faker import Faker
 from server.config import create_app, db
 from server.models import User, Parcel, ParcelHistory
-
-app = create_app()
+from random import choice, uniform
+from datetime import datetime
 
 fake = Faker()
+app = create_app()
 
 def seed_db():
     """Seed the database with initial data."""
@@ -30,15 +29,17 @@ def seed_db():
                 username=fake.user_name(),
                 email=email,
                 phone_number=fake.phone_number(),
-                longitude_hash=str(fake.longitude()),  # Converted to string
-                latitude_hash=str(fake.latitude())     # Converted to string
+                longitude_hash=str(fake.longitude()),
+                latitude_hash=str(fake.latitude())
             )
-            user.set_password("password123")
+            user.password = "password123"
             users.append(user)
-            db.session.add(user)
+        db.session.add_all(users)
         db.session.commit()
 
         print("Seeding parcels...")
+        # Refresh user list with IDs after commit
+        users = User.query.all()
         parcels = []
         for _ in range(20):
             sender = choice(users)
@@ -50,24 +51,27 @@ def seed_db():
                 sender_phone_number=fake.phone_number(),
                 pickup_location_text=fake.address(),
                 destination_location_text=fake.address(),
-                pick_up_longitude=uniform(-180, 180),
-                pick_up_latitude=uniform(-90, 90),
-                destination_longitude=uniform(-180, 180),
-                destination_latitude=uniform(-90, 90),
-                current_location_longitude=uniform(-180, 180),
-                current_location_latitude=uniform(-90, 90),
-                distance=uniform(1.0, 100.0),
-                cost=uniform(10.0, 100.0),
+                pick_up_longitude=float(fake.longitude()),
+                pick_up_latitude=float(fake.latitude()),
+                destination_longitude=float(fake.longitude()),
+                destination_latitude=float(fake.latitude()),
+                current_location_longitude=float(fake.longitude()),
+                current_location_latitude=float(fake.latitude()),
+                current_location=fake.city(),
+                distance=round(uniform(1.0, 100.0), 2),
+                cost=round(uniform(100.0, 1000.0), 2),
                 recipient_name=fake.name(),
                 recipient_phone_number=fake.phone_number(),
                 courier_id=None,
                 user_id=sender.id
             )
             parcels.append(parcel)
-            db.session.add(parcel)
+        db.session.bulk_save_objects(parcels)
         db.session.commit()
 
         print("Seeding parcel history...")
+        parcels = Parcel.query.all()
+        histories = []
         for _ in range(30):
             parcel = choice(parcels)
             updater = choice(users)
@@ -79,9 +83,10 @@ def seed_db():
                 new_value=choice(["in_transit", "delivered", "cancelled"]),
                 timestamp=datetime.now()
             )
-            db.session.add(history)
-
+            histories.append(history)
+        db.session.bulk_save_objects(histories)
         db.session.commit()
+
         print("Seeding complete!")
 
 if __name__ == '__main__':

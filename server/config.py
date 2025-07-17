@@ -22,7 +22,6 @@ db = SQLAlchemy(metadata=metadata)
 migrate = Migrate()
 bcrypt = Bcrypt()
 jwt = JWTManager()
-api = Api()
 
 blacklist = set()
 
@@ -33,7 +32,7 @@ def create_app(test_config=None):
 
     # Default config
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-super-secret-key')
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////home/prizrak917/MORINGA/phase-5/Deliveroo/server/app.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'your-secret-jwt-key')
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
@@ -48,12 +47,40 @@ def create_app(test_config=None):
     migrate.init_app(app, db)
     bcrypt.init_app(app)
     jwt.init_app(app)
-    api.init_app(app)
     CORS(app, supports_credentials=True)
+
+    from flask_restful import Api
+    api = Api(app)
 
     @jwt.token_in_blocklist_loader
     def check_if_token_revoked(jwt_header, jwt_payload):
         """Check if JWT token is revoked."""
         return jwt_payload['jti'] in blacklist
+
+    print("Before registering API resources")
+    # Register API resources here
+    from server.routes.profile import Signup, Logout, Profile
+    from server.routes.auth_routes import Login
+    from server.routes.admin_routes import (
+        AdminParcelList, UpdateParcelStatus, UpdateParcelLocation,
+        ParcelHistoryList, ParcelHistoryDetail
+    )
+    from server.routes.parcels import ParcelList, ParcelResource, ParcelCancel, ParcelDestination, ParcelStatus
+
+    api.add_resource(Signup, '/signup')
+    api.add_resource(Login, '/login')
+    api.add_resource(Logout, '/logout')
+    api.add_resource(Profile, '/profile')
+    api.add_resource(AdminParcelList, '/admin/parcels')
+    api.add_resource(UpdateParcelStatus, '/admin/parcels/<int:id>/status')
+    api.add_resource(UpdateParcelLocation, '/admin/parcels/<int:id>/location')
+    api.add_resource(ParcelHistoryList, '/admin/histories')
+    api.add_resource(ParcelHistoryDetail, '/admin/histories/<int:id>')
+    api.add_resource(ParcelList, '/parcels')
+    api.add_resource(ParcelResource, '/parcels/<int:parcel_id>')
+    api.add_resource(ParcelCancel, '/parcels/<int:parcel_id>/cancel')
+    api.add_resource(ParcelDestination, '/parcels/<int:parcel_id>/destination')
+    api.add_resource(ParcelStatus, '/parcels/<int:parcel_id>/status')
+    print("After registering API resources")
 
     return app
