@@ -69,12 +69,12 @@ class UpdateParcelLocation(Resource):
             return {"error": "Parcel not found"}, 404
 
         data = request.get_json()
-        new_location = data.get("present_location")
+        new_location = data.get("current_location")
         if not new_location:
-            return {"error": "present_location is required"}, 400
+            return {"error": "current_location is required"}, 400
 
-        old_location = getattr(parcel, 'present_location', None)
-        parcel.present_location = new_location
+        old_location = parcel.current_location
+        parcel.current_location = new_location
         parcel.updated_at = datetime.now(timezone.utc)
         db.session.add(parcel)
 
