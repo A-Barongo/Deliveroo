@@ -64,7 +64,7 @@ curl -s -X PATCH $BASE_URL/parcels/$PARCEL_ID/status \
 
 # --- Admin Endpoints ---
 # NOTE: You must manually set ADMIN_ACCESS_TOKEN below for admin endpoints.
-ADMIN_ACCESS_TOKEN="<ADMIN_ACCESS_TOKEN>"
+ADMIN_ACCESS_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc1Mjc4NDA0MSwianRpIjoiZGQ3YjE5ZjgtMWNjYy00OThmLTgzNzEtMTI3NmE2MjMyZTI5IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6MTIsIm5iZiI6MTc1Mjc4NDA0MSwiY3NyZiI6IjEwM2U5MWEwLWU0MjctNDNjYy05YzY1LTU5OWM4NGQ0MzQwNSIsImV4cCI6MTc1Mjc4NzY0MX0.qpchiZVTrymiVGFx_tX-5cfy3SJz37WpCdZciyji7GY"
 
 # 11. List All Parcels (admin)
 printf "\n--- Admin: List All Parcels ---\n"
