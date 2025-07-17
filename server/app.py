@@ -1,6 +1,4 @@
-from flask import request, session, make_response, jsonify
-from flask_restful import Resource
-from sqlalchemy.exc import IntegrityError
+"""Main application entry point for Deliveroo."""
 from server.config import create_app, db, api
 from server.models import User, Parcel, ParcelHistory
 from server.routes.auth_routes import Login

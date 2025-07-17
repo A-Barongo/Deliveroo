@@ -1,10 +1,13 @@
+# pyright: reportRedeclaration=false
+"""Database models for the Deliveroo application."""
+from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import validates
 from sqlalchemy.ext.hybrid import hybrid_property
 from server.config import bcrypt, db
-from datetime import datetime, timezone
 
 class User(db.Model):
+    """User model for application users."""
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -19,23 +22,28 @@ class User(db.Model):
 
     @validates('email')
     def validate_email(self, key, value):
+        """Validate that the email contains '@' and ends with '.com'."""
         if '@' not in value or not value.endswith('.com'):
             raise ValueError("Email must contain '@' and end with '.com'")
         return value
 
     @hybrid_property  # type: ignore
     def password(self):
+        """Prevent viewing the password hash."""
         raise Exception('Password hashes may not be viewed.')
 
     @password.setter  # type: ignore
     def password(self, value):
+        """Hash and set the user's password."""
         hashed = bcrypt.generate_password_hash(value.encode('utf-8'))
         self._password = hashed.decode('utf-8')
 
     def authenticate(self, password):
+        """Check if the provided password matches the stored hash."""
         return bcrypt.check_password_hash(self._password, password.encode('utf-8'))
 
     def to_dict(self):
+        """Return a dictionary representation of the user."""
         result = {}
         for c in self.__mapper__.c:  # type: ignore
             value = getattr(self, c.name)
@@ -46,6 +54,7 @@ class User(db.Model):
         return result
 
 class Parcel(db.Model):
+    """Parcel model for deliveries."""
     __tablename__ = 'parcels'
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.String(255))
@@ -73,6 +82,7 @@ class Parcel(db.Model):
     user = db.relationship('User', backref='parcels')
 
     def to_dict(self):
+        """Return a dictionary representation of the parcel."""
         result = {}
         for c in self.__mapper__.c:  # type: ignore
             value = getattr(self, c.name)
@@ -82,7 +92,14 @@ class Parcel(db.Model):
                 result[c.name] = value
         return result
 
+    def calculate_cost(self):
+        """Calculate the cost of the parcel based on weight."""
+        if self.weight is not None:
+            return self.weight * 150
+        return 0
+
 class ParcelHistory(db.Model):
+    """History of parcel updates."""
     __tablename__ = 'parcel_histories'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -97,6 +114,7 @@ class ParcelHistory(db.Model):
     parcel = db.relationship('Parcel', backref='history')
 
     def to_dict(self):
+        """Return a dictionary representation of the parcel history."""
         return {
             "id": self.id,
             "parcel_id": self.parcel_id,

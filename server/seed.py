@@ -1,11 +1,12 @@
-#!/usr/bin/env python3
-
-from faker import Faker
-from config import app, db
-from models import User, Parcel, ParcelHistory
-from random import choice, uniform, randint
+# pyright: reportCallIssue=false
+"""Seed script for populating the database with initial data."""
+from random import choice, uniform
 from datetime import datetime
-import random
+from faker import Faker
+from server.config import create_app, db
+from server.models import User, Parcel, ParcelHistory
+
+app = create_app()
 
 fake = Faker()
 
@@ -41,21 +42,21 @@ def seed_data():
         for _ in range(20):
             sender = choice(users)
             parcel = Parcel(
-                description=fake.sentence(),
-                weight=round(uniform(0.5, 10.0), 2),
-                status=choice(['pending', 'in_transit', 'delivered']),
-                sender_name=sender.username,
-                sender_phone_number=sender.phone_number,
+                description=fake.text(max_nb_chars=50),
+                weight=uniform(1.0, 10.0),
+                status="pending",
+                sender_name=fake.name(),
+                sender_phone_number=fake.phone_number(),
                 pickup_location_text=fake.address(),
                 destination_location_text=fake.address(),
-                pick_up_longitude=float(fake.longitude()),
-                pick_up_latitude=float(fake.latitude()),
-                destination_longitude=float(fake.longitude()),
-                destination_latitude=float(fake.latitude()),
-                current_location_longitude=float(fake.longitude()),
-                current_location_latitude=float(fake.latitude()),
-                distance=round(uniform(1.0, 100.0), 2),
-                cost=round(uniform(100.0, 1000.0), 2),
+                pick_up_longitude=uniform(-180, 180),
+                pick_up_latitude=uniform(-90, 90),
+                destination_longitude=uniform(-180, 180),
+                destination_latitude=uniform(-90, 90),
+                current_location_longitude=uniform(-180, 180),
+                current_location_latitude=uniform(-90, 90),
+                distance=uniform(1.0, 100.0),
+                cost=uniform(10.0, 100.0),
                 recipient_name=fake.name(),
                 recipient_phone_number=fake.phone_number(),
                 courier_id=None,

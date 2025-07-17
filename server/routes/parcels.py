@@ -1,13 +1,14 @@
-
+"""Parcel routes for Deliveroo API."""
 from flask import request
 from flask_restful import Resource
-from sqlalchemy.exc import SQLAlchemyError
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from server.models import Parcel
 from server.config import db
-from flask_jwt_extended import jwt_required, get_jwt_identity
 
 class ParcelList(Resource):
+    """Resource for listing and creating parcels."""
     def get(self):
+        """Get a paginated list of parcels."""
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 10))
         query = db.session.query(Parcel)
@@ -21,48 +22,51 @@ class ParcelList(Resource):
         }, 200
 
     def post(self):
+        """Create a new parcel."""
         data = request.get_json()
         try:
             parcel = Parcel(**data)
             db.session.add(parcel)
             db.session.commit()
             return parcel.to_dict(), 201
-        except SQLAlchemyError as e:
+        except Exception as e:
             db.session.rollback()
             return {"error": str(e)}, 500
 
 class ParcelResource(Resource):
+    """Resource for getting a single parcel."""
     def get(self, parcel_id):
+        """Get a parcel by its ID."""
         parcel = db.session.query(Parcel).get(parcel_id)
         if not parcel:
             return {"error": "parcel not found"}, 404
         return parcel.to_dict(), 200
 
 class ParcelCancel(Resource):
+    """Resource for cancelling a parcel."""
     @jwt_required()
     def patch(self, parcel_id):
+        """Cancel a parcel if the user is the owner and it's pending."""
         current_user_id = get_jwt_identity()
         parcel = db.session.query(Parcel).get(parcel_id)
-
         if not parcel:
             return {"error": "parcel not found"}, 404
-
         if parcel.user_id != current_user_id:
             return {"error": "You can only cancel parcels you created"}, 403
-
         if parcel.status != 'pending':
             return {"error": "Only pending parcels can be cancelled"}, 400
-
         parcel.status = 'cancelled'
         db.session.commit()
         return parcel.to_dict(), 200
 
 class ParcelDestination(Resource):
+    """Resource for updating parcel destination."""
     def patch(self, parcel_id):
+        """Update the destination of a parcel."""
         parcel = db.session.query(Parcel).get(parcel_id)
         if not parcel:
             return {"error": "parcel not found"}, 404
-        if parcel.status== 'delivered':
+        if parcel.status == 'delivered':
             return {"error": "Parcel destination cannot be changed after delivery"}, 400
         data = request.get_json()
         for field in ["destination_location_text", "destination_longitude", "destination_latitude"]:
@@ -72,7 +76,9 @@ class ParcelDestination(Resource):
         return parcel.to_dict(), 200
 
 class ParcelStatus(Resource):
+    """Resource for updating parcel status."""
     def patch(self, parcel_id):
+        """Update the status of a parcel."""
         parcel = db.session.query(Parcel).get(parcel_id)
         if not parcel:
             return {"error": "parcel not found"}, 404
