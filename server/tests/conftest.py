@@ -1,12 +1,14 @@
 import pytest
-from server.app import app, db
+from server.config import create_app, db
 from server.models import User
 
 @pytest.fixture(scope='module')
 def client():
-    app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-    app.config['JWT_SECRET_KEY'] = 'test-secret'
+    app = create_app({
+        'TESTING': True,
+        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
+        'JWT_SECRET_KEY': 'test-secret',
+    })
 
     with app.test_client() as client:
         with app.app_context():

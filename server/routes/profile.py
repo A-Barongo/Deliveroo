@@ -2,9 +2,9 @@ from flask import request,make_response,jsonify
 from flask_restful import Resource
 from sqlalchemy.exc import IntegrityError
 
-from models import User#,Parcel,ParcelHistory
+from server.models import User#,Parcel,ParcelHistory
 from flask_jwt_extended import create_access_token,jwt_required, get_jwt,get_jwt_identity
-from config import blacklist,db 
+from server.config import blacklist, db 
 
 class Signup(Resource):
     def post(self):

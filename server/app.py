@@ -1,16 +1,17 @@
 from flask import request, session, make_response, jsonify
 from flask_restful import Resource
 from sqlalchemy.exc import IntegrityError
-from config import app, db, api
-from models import User, Parcel, ParcelHistory
-
-from routes.auth_routes import Login
-from routes.admin_routes import (
+from server.config import create_app, db, api
+from server.models import User, Parcel, ParcelHistory
+from server.routes.auth_routes import Login
+from server.routes.admin_routes import (
     AdminParcelList, UpdateParcelStatus, UpdateParcelLocation,
     ParcelHistoryList, ParcelHistoryDetail
 )
-from routes.profile import Signup, Logout, Profile
-from routes.parcels import ParcelList, ParcelResource, ParcelCancel, ParcelDestination, ParcelStatus
+from server.routes.profile import Signup, Logout, Profile
+from server.routes.parcels import ParcelList, ParcelResource, ParcelCancel, ParcelDestination, ParcelStatus
+
+app = create_app()
 
 # Register routes
 api.add_resource(Signup, '/signup')

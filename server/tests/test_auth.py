@@ -1,7 +1,7 @@
 import pytest
 from flask_jwt_extended import decode_token
 from flask import json
-from config import blacklist
+from server.config import blacklist
 
 # ---- Fixtures ---- #
 
