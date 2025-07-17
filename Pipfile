@@ -4,18 +4,19 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+marshmallow = "*"
+pytest = "*"
 flask = "*"
 flask-sqlalchemy = "*"
 flask-migrate = "*"
 psycopg2-binary = "*"
-flask-bcrypt = "*"
 flask-jwt-extended = "*"
 flask-cors = "*"
 requests = "*"
 python-dotenv = "*"
 flask-restful = "*"
+sqlalchemy = "*"
 sqlalchemy-serializer = "*"
-flask-mail = "*"
 
 [dev-packages]
 pytest = "*"
@@ -23,4 +24,4 @@ pytest-flask = "*"
 coverage = "*"
 
 [requires]
-python_version = "3.8"
+python_version = "3.12"

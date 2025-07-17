@@ -1,0 +1,30 @@
+<<<<<<< HEAD
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.env/
+.env
+
+# Pipenv
+Pipfile.lock
+
+# SQLite database
+*.sqlite3
+deliveroo.db
+
+# VSCode/IDE
+.vscode/
+.idea/
+.DS_Store
+=======
+.db
+instance
+migrations 
+.env
+venv
+>>>>>>> main
