@@ -53,8 +53,10 @@ class ParcelCancel(Resource):
             return {"error": "parcel not found"}, 404
         if parcel.user_id != current_user_id:
             return {"error": "You can only cancel parcels you created"}, 403
-        if parcel.status != 'pending':
-            return {"error": "Only pending parcels can be cancelled"}, 400
+
+        if parcel.status== 'delivered':
+            return {"error": "Parcel cannot be cancelled after delivery"}, 400
+
         parcel.status = 'cancelled'
         db.session.commit()
         return parcel.to_dict(), 200
