@@ -32,8 +32,8 @@ class AdminParcelList(Resource):
 class UpdateParcelStatus(Resource):
     """Resource for updating parcel status (admin only)."""
     @admin_required
-    def patch(self, parcel_id, current_user):
-        parcel = Parcel.query.get(parcel_id)
+    def patch(self, id, current_user):
+        parcel = Parcel.query.get(id)
         if not parcel:
             return {"error": "Parcel not found"}, 404
 
@@ -63,8 +63,8 @@ class UpdateParcelStatus(Resource):
 class UpdateParcelLocation(Resource):
     """Resource for updating parcel location (admin only)."""
     @admin_required
-    def patch(self, parcel_id, current_user):
-        parcel = Parcel.query.get(parcel_id)
+    def patch(self, id, current_user):
+        parcel = Parcel.query.get(id)
         if not parcel:
             return {"error": "Parcel not found"}, 404
 
