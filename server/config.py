@@ -31,10 +31,10 @@ def create_app(test_config=None):
     app = Flask(__name__)
 
     # Default config
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-super-secret-key')
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'your-secret-jwt-key')
+    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
     app.config['JWT_BLACKLIST_ENABLED'] = True
     app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access']
