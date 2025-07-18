@@ -1,4 +1,4 @@
-# 🚚 Deliveroo Project
+#  Deliveroo Project
 
 Deliveroo is a full-stack parcel delivery platform designed to streamline the process of sending, tracking, and managing parcels for both customers and administrators. The project combines a robust backend API, a user-friendly frontend interface, and seamless integrations with third-party services like Google Maps. Deliveroo is built for scalability, security, and ease of use, making it suitable for real-world deployment by logistics companies or as a learning project for modern web development.
 
