@@ -10,6 +10,7 @@ from sqlalchemy import MetaData
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
+from flasgger import Swagger  # ✅ NEW
 
 load_dotenv()
 
@@ -24,6 +25,18 @@ bcrypt = Bcrypt()
 jwt = JWTManager()
 
 blacklist = set()
+
+# Swagger config (optional, can be customized)
+swagger_template = {
+    "swagger": "2.0",
+    "info": {
+        "title": "Deliveroo API",
+        "description": "API documentation for the Deliveroo courier system.",
+        "version": "1.0.0"
+    },
+    "basePath": "/",
+    "schemes": ["http", "https"],
+}
 
 # 2. App factory
 def create_app(test_config=None):
@@ -49,7 +62,10 @@ def create_app(test_config=None):
     jwt.init_app(app)
     CORS(app, supports_credentials=True)
 
-    from flask_restful import Api
+    # Initialize Swagger ✅
+    Swagger(app, template=swagger_template)
+
+    # Register Flask-Restful API
     api = Api(app)
 
     @jwt.token_in_blocklist_loader
@@ -58,7 +74,7 @@ def create_app(test_config=None):
         return jwt_payload['jti'] in blacklist
 
     print("Before registering API resources")
-    # Register API resources here
+    # Register API resources
     from server.routes.profile import Signup, Logout, Profile
     from server.routes.auth_routes import Login
     from server.routes.admin_routes import (

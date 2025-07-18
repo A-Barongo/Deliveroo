@@ -8,3 +8,4 @@ Flask-JWT-Extended
 python-dotenv
 gunicorn
 psycopg2-binary
+flasgger
