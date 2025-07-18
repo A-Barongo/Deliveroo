@@ -5,15 +5,33 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from server.models import Parcel
 from server.config import db
 
+
 class ParcelList(Resource):
-    """Resource for listing and creating parcels."""
+    """List and create parcels."""
+
     def get(self):
-        """Get a paginated list of parcels."""
+        """
+        Get a paginated list of parcels.
+        ---
+        tags:
+          - Parcels
+        parameters:
+          - name: page
+            in: query
+            type: integer
+            default: 1
+          - name: per_page
+            in: query
+            type: integer
+            default: 10
+        responses:
+          200:
+            description: List of parcels with pagination
+        """
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 10))
-        query = db.session.query(Parcel)
-        total = query.count()
-        parcels = query.offset((page - 1) * per_page).limit(per_page).all()
+        parcels = Parcel.query.offset((page - 1) * per_page).limit(per_page).all()
+        total = Parcel.query.count()
         return {
             "parcels": [p.to_dict() for p in parcels],
             "page": page,
@@ -22,7 +40,46 @@ class ParcelList(Resource):
         }, 200
 
     def post(self):
-        """Create a new parcel."""
+        """
+        Create a new parcel.
+        ---
+        tags:
+          - Parcels
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - user_id
+                  - pickup_location_text
+                  - destination_location_text
+                properties:
+                  user_id:
+                    type: integer
+                  pickup_location_text:
+                    type: string
+                  pickup_latitude:
+                    type: number
+                  pickup_longitude:
+                    type: number
+                  destination_location_text:
+                    type: string
+                  destination_latitude:
+                    type: number
+                  destination_longitude:
+                    type: number
+                  weight:
+                    type: number
+                  status:
+                    type: string
+        responses:
+          201:
+            description: Parcel created
+          500:
+            description: Server error
+        """
         data = request.get_json()
         try:
             parcel = Parcel(**data)
@@ -33,61 +90,164 @@ class ParcelList(Resource):
             db.session.rollback()
             return {"error": str(e)}, 500
 
+
 class ParcelResource(Resource):
-    """Resource for getting a single parcel."""
+    """Get parcel by ID."""
+
     def get(self, parcel_id):
-        """Get a parcel by its ID."""
-        parcel = db.session.query(Parcel).get(parcel_id)
+        """
+        Get parcel by ID.
+        ---
+        tags:
+          - Parcels
+        parameters:
+          - name: parcel_id
+            in: path
+            required: true
+            type: integer
+        responses:
+          200:
+            description: Parcel found
+          404:
+            description: Parcel not found
+        """
+        parcel = Parcel.query.get(parcel_id)
         if not parcel:
-            return {"error": "parcel not found"}, 404
+            return {"error": "Parcel not found"}, 404
         return parcel.to_dict(), 200
 
+
 class ParcelCancel(Resource):
-    """Resource for cancelling a parcel."""
+    """Cancel a parcel."""
+
     @jwt_required()
     def patch(self, parcel_id):
-        """Cancel a parcel if the user is the owner and it's pending."""
-        current_user_id = get_jwt_identity()
-        parcel = db.session.query(Parcel).get(parcel_id)
+        """
+        Cancel parcel by owner if not delivered.
+        ---
+        tags:
+          - Parcels
+        security:
+          - BearerAuth: []
+        parameters:
+          - name: parcel_id
+            in: path
+            required: true
+            type: integer
+        responses:
+          200:
+            description: Parcel cancelled
+          400:
+            description: Already delivered
+          403:
+            description: Not parcel owner
+          404:
+            description: Parcel not found
+        """
+        user_id = get_jwt_identity()
+        parcel = Parcel.query.get(parcel_id)
         if not parcel:
-            return {"error": "parcel not found"}, 404
-        if parcel.user_id != current_user_id:
-            return {"error": "You can only cancel parcels you created"}, 403
-
-        if parcel.status== 'delivered':
-            return {"error": "Parcel cannot be cancelled after delivery"}, 400
+            return {"error": "Parcel not found"}, 404
+        if parcel.user_id != user_id:
+            return {"error": "Not authorized"}, 403
+        if parcel.status == 'delivered':
+            return {"error": "Cannot cancel delivered parcel"}, 400
 
         parcel.status = 'cancelled'
         db.session.commit()
         return parcel.to_dict(), 200
 
+
 class ParcelDestination(Resource):
-    """Resource for updating parcel destination."""
+    """Update parcel destination."""
+
     def patch(self, parcel_id):
-        """Update the destination of a parcel."""
-        parcel = db.session.query(Parcel).get(parcel_id)
+        """
+        Update parcel destination (if not delivered).
+        ---
+        tags:
+          - Parcels
+        parameters:
+          - name: parcel_id
+            in: path
+            required: true
+            type: integer
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  destination_location_text:
+                    type: string
+                  destination_latitude:
+                    type: number
+                  destination_longitude:
+                    type: number
+        responses:
+          200:
+            description: Parcel updated
+          400:
+            description: Already delivered
+          404:
+            description: Not found
+        """
+        parcel = Parcel.query.get(parcel_id)
         if not parcel:
-            return {"error": "parcel not found"}, 404
+            return {"error": "Parcel not found"}, 404
         if parcel.status == 'delivered':
-            return {"error": "Parcel destination cannot be changed after delivery"}, 400
+            return {"error": "Cannot update delivered parcel"}, 400
+
         data = request.get_json()
-        for field in ["destination_location_text", "destination_longitude", "destination_latitude"]:
+        for field in ["destination_location_text", "destination_latitude", "destination_longitude"]:
             if field in data:
                 setattr(parcel, field, data[field])
         db.session.commit()
         return parcel.to_dict(), 200
 
+
 class ParcelStatus(Resource):
-    """Resource for updating parcel status."""
+    """Update parcel status (generic)."""
+
     def patch(self, parcel_id):
-        """Update the status of a parcel."""
-        parcel = db.session.query(Parcel).get(parcel_id)
+        """
+        Update parcel status.
+        ---
+        tags:
+          - Parcels
+        parameters:
+          - name: parcel_id
+            in: path
+            required: true
+            type: integer
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+        responses:
+          200:
+            description: Parcel updated
+          400:
+            description: Missing status
+          404:
+            description: Not found
+        """
+        parcel = Parcel.query.get(parcel_id)
         if not parcel:
-            return {"error": "parcel not found"}, 404
-        data = request.get_json()
-        new_status = data.get('status')
+            return {"error": "Parcel not found"}, 404
+
+        new_status = request.json.get("status")
         if not new_status:
-            return {"error": "missing status field"}, 400
+            return {"error": "Missing status field"}, 400
+
         parcel.status = new_status
         db.session.commit()
-        return parcel.to_dict(), 200 
+        return parcel.to_dict(), 200
