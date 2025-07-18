@@ -163,5 +163,5 @@ class Logout(Resource):
       
 class Home(Resource):
     def get(self):
-        return jsonify({"message": "Welcome to the Deliveroo backend"}), 200
+        return {"message": "Welcome to the Deliveroo backend"}, 200
 
