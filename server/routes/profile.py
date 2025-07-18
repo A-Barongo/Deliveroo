@@ -1,5 +1,5 @@
 """Profile routes for Deliveroo app."""
-from flask import request
+from flask import request,jsonify
 from flask_restful import Resource
 from flask_jwt_extended import (
     create_access_token,
@@ -160,4 +160,8 @@ class Logout(Resource):
         jti = get_jwt()["jti"]
         blacklist.add(jti)
         return {"message": "Successfully logged out"}, 200
+      
+class Home(Resource):
+    def get(self):
+        return jsonify({"message": "Welcome to the Deliveroo backend"}), 200
 

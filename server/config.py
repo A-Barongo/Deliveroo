@@ -1,4 +1,3 @@
-"""Configuration and app factory for Deliveroo Flask app."""
 import os
 from datetime import timedelta
 from flask import Flask
@@ -10,7 +9,7 @@ from sqlalchemy import MetaData
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
-from flasgger import Swagger  # ✅ NEW
+from flasgger import Swagger  
 
 load_dotenv()
 
@@ -76,14 +75,14 @@ def create_app(test_config=None):
 
     print("Before registering API resources")
     # Register API resources
-    from server.routes.profile import Signup, Logout, Profile
+    from server.routes.profile import Signup, Logout, Profile,Home
     from server.routes.auth_routes import Login
     from server.routes.admin_routes import (
         AdminParcelList, UpdateParcelStatus, UpdateParcelLocation,
         ParcelHistoryList, ParcelHistoryDetail
     )
     from server.routes.parcels import ParcelList, ParcelResource, ParcelCancel, ParcelDestination, ParcelStatus
-
+    api.add_resource(Home, '/')
     api.add_resource(Signup, '/signup')
     api.add_resource(Login, '/login')
     api.add_resource(Logout, '/logout')
