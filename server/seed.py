@@ -2,7 +2,7 @@
 from faker import Faker
 from server.config import create_app, db
 from server.models import User, Parcel, ParcelHistory
-from random import choice, uniform
+from random import choice, uniform,randint
 from datetime import datetime, timezone
 
 fake = Faker()
@@ -19,7 +19,11 @@ def seed_db():
 
         print("Seeding users...")
         users = []
-        for _ in range(10):
+        admin_indices = set()
+        while len(admin_indices) < 2:
+            admin_indices.add(randint(0, 9))  # randomly pick 2 distinct admin indices
+
+        for i in range(10):
             email = fake.email()
             if not email.endswith(".com"):
                 email = email.split("@")[0] + "@example.com"
@@ -34,6 +38,7 @@ def seed_db():
                 phone_number=phone_number,
                 longitude_hash=str(fake.longitude()),
                 latitude_hash=str(fake.latitude()),
+                admin=(i in admin_indices)
             )
             user.password = "password123"
             users.append(user)
