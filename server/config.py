@@ -1,4 +1,3 @@
-"""Configuration and app factory for Deliveroo Flask app."""
 import os
 from datetime import timedelta
 from flask import Flask
@@ -10,6 +9,7 @@ from sqlalchemy import MetaData
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
+from flasgger import Swagger  
 
 load_dotenv()
 
@@ -25,19 +25,32 @@ jwt = JWTManager()
 
 blacklist = set()
 
+# Swagger config (optional, can be customized)
+swagger_template = {
+    "swagger": "2.0",
+    "info": {
+        "title": "Deliveroo API",
+        "description": "API documentation for the Deliveroo courier system.",
+        "version": "1.0.0"
+    },
+    "basePath": "/",
+    "schemes": ["http", "https"],
+}
+
 # 2. App factory
 def create_app(test_config=None):
     """Application factory for Flask app."""
     app = Flask(__name__)
 
     # Default config
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-super-secret-key')
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'your-secret-jwt-key')
+    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
     app.config['JWT_BLACKLIST_ENABLED'] = True
     app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access']
+    app.config['GOOGLE_MAPS_API_KEY'] = os.getenv('GOOGLE_MAPS_API_KEY')
 
     if test_config:
         app.config.update(test_config)
@@ -49,7 +62,10 @@ def create_app(test_config=None):
     jwt.init_app(app)
     CORS(app, supports_credentials=True)
 
-    from flask_restful import Api
+    # Initialize Swagger ✅
+    Swagger(app, template=swagger_template)
+
+    # Register Flask-Restful API
     api = Api(app)
 
     @jwt.token_in_blocklist_loader
@@ -58,15 +74,15 @@ def create_app(test_config=None):
         return jwt_payload['jti'] in blacklist
 
     print("Before registering API resources")
-    # Register API resources here
-    from server.routes.profile import Signup, Logout, Profile
+    # Register API resources
+    from server.routes.profile import Signup, Logout, Profile,Home
     from server.routes.auth_routes import Login
     from server.routes.admin_routes import (
         AdminParcelList, UpdateParcelStatus, UpdateParcelLocation,
         ParcelHistoryList, ParcelHistoryDetail
     )
     from server.routes.parcels import ParcelList, ParcelResource, ParcelCancel, ParcelDestination, ParcelStatus
-
+    api.add_resource(Home, '/')
     api.add_resource(Signup, '/signup')
     api.add_resource(Login, '/login')
     api.add_resource(Logout, '/logout')

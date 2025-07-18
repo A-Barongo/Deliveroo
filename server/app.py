@@ -1,7 +1,7 @@
-"""Main application entry point for Deliveroo."""
 from server.config import create_app
 
 app = create_app()
+
 
 print("Registered routes:")
 for rule in app.url_map.iter_rules():

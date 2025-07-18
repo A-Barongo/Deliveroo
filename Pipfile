@@ -17,6 +17,7 @@ python-dotenv = "*"
 flask-restful = "*"
 sqlalchemy = "*"
 sqlalchemy-serializer = "*"
+flask-bcrypt = "*"
 
 [dev-packages]
 pytest = "*"

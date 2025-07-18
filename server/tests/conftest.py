@@ -1,7 +1,6 @@
 """Pytest fixtures for Deliveroo app tests."""
 import pytest
 from server.config import create_app, db
-from server.models import User
 
 @pytest.fixture(scope='module')
 def client():
@@ -11,9 +10,8 @@ def client():
         'JWT_SECRET_KEY': 'test-secret',
     })
 
-    with app.test_client() as client:
-        with app.app_context():
-            db.create_all()
-            yield client
-            db.session.remove()
-            db.drop_all()
+    with app.app_context():
+        db.create_all()
+        yield app.test_client()  
+        db.session.remove()
+        db.drop_all()

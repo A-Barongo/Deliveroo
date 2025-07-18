@@ -1,8 +1,10 @@
 """Admin routes for Deliveroo app."""
+
 from datetime import datetime, timezone
 from flask import request, jsonify
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from flasgger import swag_from
 from server.config import db
 from server.models import Parcel, User, ParcelHistory
 
@@ -24,6 +26,20 @@ def admin_required(func):
 
 class AdminParcelList(Resource):
     """Resource for listing all parcels (admin only)."""
+
+    @swag_from({
+        'tags': ['Admin'],
+        'summary': 'List all parcels',
+        'description': 'Returns a list of all parcels. Admin access only.',
+        'security': [{'BearerAuth': []}],
+        'responses': {
+            200: {
+                'description': 'List of all parcels',
+                'content': {'application/json': {}}
+            },
+            403: {'description': 'Unauthorized (non-admin)'}
+        }
+    })
     @admin_required
     def get(self, current_user):
         parcels = Parcel.query.all()
@@ -31,6 +47,41 @@ class AdminParcelList(Resource):
 
 class UpdateParcelStatus(Resource):
     """Resource for updating parcel status (admin only)."""
+
+    @swag_from({
+        'tags': ['Admin'],
+        'summary': 'Update parcel status',
+        'description': 'Allows admin to update the status of a parcel.',
+        'security': [{'BearerAuth': []}],
+        'parameters': [
+            {
+                'in': 'path',
+                'name': 'parcel_id',
+                'required': True,
+                'schema': {'type': 'integer'}
+            }
+        ],
+        'requestBody': {
+            'required': True,
+            'content': {
+                'application/json': {
+                    'schema': {
+                        'type': 'object',
+                        'properties': {
+                            'status': {'type': 'string', 'example': 'in transit'}
+                        },
+                        'required': ['status']
+                    }
+                }
+            }
+        },
+        'responses': {
+            200: {'description': 'Parcel status updated'},
+            400: {'description': 'Status field is required'},
+            403: {'description': 'Unauthorized (non-admin)'},
+            404: {'description': 'Parcel not found'}
+        }
+    })
     @admin_required
     def patch(self, id, current_user):
         parcel = Parcel.query.get(id)
@@ -47,7 +98,6 @@ class UpdateParcelStatus(Resource):
         parcel.updated_at = datetime.now(timezone.utc)
         db.session.add(parcel)
 
-        # Log history
         history = ParcelHistory(
             parcel_id=parcel.id,
             updated_by=current_user.id,
@@ -62,6 +112,41 @@ class UpdateParcelStatus(Resource):
 
 class UpdateParcelLocation(Resource):
     """Resource for updating parcel location (admin only)."""
+
+    @swag_from({
+        'tags': ['Admin'],
+        'summary': 'Update parcel location',
+        'description': 'Allows admin to update the current location of a parcel.',
+        'security': [{'BearerAuth': []}],
+        'parameters': [
+            {
+                'in': 'path',
+                'name': 'parcel_id',
+                'required': True,
+                'schema': {'type': 'integer'}
+            }
+        ],
+        'requestBody': {
+            'required': True,
+            'content': {
+                'application/json': {
+                    'schema': {
+                        'type': 'object',
+                        'properties': {
+                            'current_location': {'type': 'string', 'example': 'Nairobi Hub'}
+                        },
+                        'required': ['current_location']
+                    }
+                }
+            }
+        },
+        'responses': {
+            200: {'description': 'Parcel location updated'},
+            400: {'description': 'current_location is required'},
+            403: {'description': 'Unauthorized (non-admin)'},
+            404: {'description': 'Parcel not found'}
+        }
+    })
     @admin_required
     def patch(self, id, current_user):
         parcel = Parcel.query.get(id)
@@ -78,7 +163,6 @@ class UpdateParcelLocation(Resource):
         parcel.updated_at = datetime.now(timezone.utc)
         db.session.add(parcel)
 
-        # Log history
         history = ParcelHistory(
             parcel_id=parcel.id,
             updated_by=current_user.id,
@@ -93,6 +177,17 @@ class UpdateParcelLocation(Resource):
 
 class ParcelHistoryList(Resource):
     """Resource for listing all parcel histories (admin only)."""
+
+    @swag_from({
+        'tags': ['Admin'],
+        'summary': 'List all parcel histories',
+        'description': 'Returns a list of all parcel update history records.',
+        'security': [{'BearerAuth': []}],
+        'responses': {
+            200: {'description': 'List of parcel history records'},
+            403: {'description': 'Unauthorized (non-admin)'}
+        }
+    })
     @admin_required
     def get(self, current_user):
         histories = ParcelHistory.query.all()
@@ -100,6 +195,26 @@ class ParcelHistoryList(Resource):
 
 class ParcelHistoryDetail(Resource):
     """Resource for getting a specific parcel history (admin only)."""
+
+    @swag_from({
+        'tags': ['Admin'],
+        'summary': 'Get parcel history detail',
+        'description': 'Fetch a specific parcel history record by ID.',
+        'security': [{'BearerAuth': []}],
+        'parameters': [
+            {
+                'in': 'path',
+                'name': 'history_id',
+                'required': True,
+                'schema': {'type': 'integer'}
+            }
+        ],
+        'responses': {
+            200: {'description': 'Parcel history record found'},
+            403: {'description': 'Unauthorized (non-admin)'},
+            404: {'description': 'History not found'}
+        }
+    })
     @admin_required
     def get(self, history_id, current_user):
         history = ParcelHistory.query.get(history_id)
