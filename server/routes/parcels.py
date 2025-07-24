@@ -2,13 +2,13 @@
 from flask import request
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from server.models import Parcel
+from server.models import Parcel,User
 from server.config import db
 
 
 class ParcelList(Resource):
     """List and create parcels."""
-
+    @jwt_required()
     def get(self):
         """
         Get a paginated list of parcels.
@@ -28,17 +28,26 @@ class ParcelList(Resource):
           200:
             description: List of parcels with pagination
         """
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 10))
-        parcels = Parcel.query.offset((page - 1) * per_page).limit(per_page).all()
-        total = Parcel.query.count()
+        
+        if user.admin:
+            query = Parcel.query
+        elif user:
+            query = Parcel.query.filter_by(user_id=user_id)
+        parcels = query.offset((page - 1) * per_page).limit(per_page).all()
+        total = query.count()
+
         return {
             "parcels": [p.to_dict() for p in parcels],
             "page": page,
             "per_page": per_page,
             "total": total
         }, 200
-
+        
+    @jwt_required()
     def post(self):
         """
         Create a new parcel.
@@ -80,9 +89,18 @@ class ParcelList(Resource):
           500:
             description: Server error
         """
+        current_user_id = get_jwt_identity()
         data = request.get_json()
+
+        # Validate required fields
+        required_fields = ['pickup_location_text', 'destination_location_text']
+        for field in required_fields:
+            if field not in data:
+                return {"error": f"Missing required field: {field}"}, 400
+
         try:
-            parcel = Parcel(**data)
+            # Override user_id to ensure it's set to the logged-in user
+            parcel = Parcel(**data, user_id=current_user_id)
             db.session.add(parcel)
             db.session.commit()
             return parcel.to_dict(), 201
@@ -94,27 +112,36 @@ class ParcelList(Resource):
 class ParcelResource(Resource):
     """Get parcel by ID."""
 
+    @jwt_required()
     def get(self, parcel_id):
-        """
-        Get parcel by ID.
-        ---
-        tags:
-          - Parcels
-        parameters:
-          - name: parcel_id
-            in: path
-            required: true
-            type: integer
-        responses:
-          200:
-            description: Parcel found
-          404:
-            description: Parcel not found
-        """
-        parcel = Parcel.query.get(parcel_id)
-        if not parcel:
-            return {"error": "Parcel not found"}, 404
-        return parcel.to_dict(), 200
+      """
+      Get parcel by ID (only if it belongs to the logged-in user).
+      ---
+      tags:
+        - Parcels
+      parameters:
+        - name: parcel_id
+          in: path
+          required: true
+          type: integer
+      responses:
+        200:
+          description: Parcel found
+        403:
+          description: Unauthorized access
+        404:
+          description: Parcel not found
+      """
+      current_user_id = get_jwt_identity()
+      parcel = Parcel.query.get(parcel_id)
+
+      if not parcel:
+          return {"error": "Parcel not found"}, 404
+
+      if parcel.user_id != current_user_id:
+          return {"error": "Unauthorized access to this parcel"}, 403
+
+      return parcel.to_dict(), 200
 
 
 class ParcelCancel(Resource):
@@ -160,7 +187,7 @@ class ParcelCancel(Resource):
 
 class ParcelDestination(Resource):
     """Update parcel destination."""
-
+    @jwt_required()
     def patch(self, parcel_id):
         """
         Update parcel destination (if not delivered).
@@ -193,9 +220,15 @@ class ParcelDestination(Resource):
           404:
             description: Not found
         """
+        current_user_id = get_jwt_identity()
         parcel = Parcel.query.get(parcel_id)
+
         if not parcel:
             return {"error": "Parcel not found"}, 404
+
+        if parcel.user_id != current_user_id :
+            return {"error": "Not authorized to modify this parcel"}, 403
+
         if parcel.status == 'delivered':
             return {"error": "Cannot update delivered parcel"}, 400
 
@@ -203,13 +236,14 @@ class ParcelDestination(Resource):
         for field in ["destination_location_text", "destination_latitude", "destination_longitude"]:
             if field in data:
                 setattr(parcel, field, data[field])
+
         db.session.commit()
         return parcel.to_dict(), 200
 
 
 class ParcelStatus(Resource):
     """Update parcel status (generic)."""
-
+    @jwt_required()
     def patch(self, parcel_id):
         """
         Update parcel status.
@@ -240,6 +274,12 @@ class ParcelStatus(Resource):
           404:
             description: Not found
         """
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+
+        if not user or not user.admin:
+            return {"error": "Admin privileges required"}, 403
+
         parcel = Parcel.query.get(parcel_id)
         if not parcel:
             return {"error": "Parcel not found"}, 404
