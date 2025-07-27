@@ -45,6 +45,38 @@ class AdminParcelList(Resource):
         parcels = Parcel.query.all()
         return jsonify([p.to_dict() for p in parcels])
 
+class AdminParcelDetail(Resource):
+    """Get a specific parcel by ID (admin only)."""
+
+    @swag_from({
+        'tags': ['Admin'],
+        'summary': 'Get parcel by ID',
+        'description': 'Returns parcel details for a given ID. Admin access only.',
+        'security': [{'BearerAuth': []}],
+        'parameters': [
+            {
+                'name': 'parcel_id',
+                'in': 'path',
+                'required': True,
+                'schema': {'type': 'integer'}
+            }
+        ],
+        'responses': {
+            200: {
+                'description': 'Parcel details',
+                'content': {'application/json': {}}
+            },
+            404: {'description': 'Parcel not found'},
+            403: {'description': 'Unauthorized'}
+        }
+    })
+    @admin_required
+    def get(self, current_user, parcel_id):
+        parcel = Parcel.query.get(parcel_id)
+        if not parcel:
+            return {'message': 'Parcel not found'}, 404
+        return jsonify(parcel.to_dict())
+
 class UpdateParcelStatus(Resource):
     """Resource for updating parcel status (admin only)."""
 
