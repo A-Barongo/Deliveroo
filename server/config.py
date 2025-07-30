@@ -9,7 +9,7 @@ from sqlalchemy import MetaData
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
-from flasgger import Swagger  
+from flasgger import Swagger
 
 load_dotenv()
 
@@ -52,6 +52,9 @@ def create_app(test_config=None):
     app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access']
     app.config['GOOGLE_MAPS_API_KEY'] = os.getenv('GOOGLE_MAPS_API_KEY')
 
+    # For CORS preflight/headers
+    app.config['CORS_HEADERS'] = 'Content-Type,Authorization'
+
     if test_config:
         app.config.update(test_config)
 
@@ -60,7 +63,24 @@ def create_app(test_config=None):
     migrate.init_app(app, db)
     bcrypt.init_app(app)
     jwt.init_app(app)
-    CORS(app, supports_credentials=True)
+
+    # Import models *after* db is initialized to avoid circular import
+    from server import models  # noqa: F401
+
+    # ---- CORS: explicitly allow the CRA dev server origins ----
+    origins_env = os.getenv("CORS_ORIGINS")
+    if origins_env:
+        allowed_origins = [o.strip() for o in origins_env.split(",") if o.strip()]
+    else:
+        allowed_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+
+    CORS(
+        app,
+        resources={r"/*": {"origins": allowed_origins}},
+        supports_credentials=True,
+        expose_headers=["Content-Type", "Authorization"],
+    )
+    # -----------------------------------------------------------
 
     # Initialize Swagger ✅
     Swagger(app, template=swagger_template)
@@ -75,13 +95,14 @@ def create_app(test_config=None):
 
     print("Before registering API resources")
     # Register API resources
-    from server.routes.profile import Signup, Logout, Profile,Home
+    from server.routes.profile import Signup, Logout, Profile, Home
     from server.routes.auth_routes import Login
     from server.routes.admin_routes import (
         AdminParcelList, UpdateParcelStatus, UpdateParcelLocation,
-        ParcelHistoryList, ParcelHistoryDetail,AdminParcelDetail
+        ParcelHistoryList, ParcelHistoryDetail, AdminParcelDetail
     )
     from server.routes.parcels import ParcelList, ParcelResource, ParcelCancel, ParcelDestination, ParcelStatus
+
     api.add_resource(Home, '/')
     api.add_resource(Signup, '/signup')
     api.add_resource(Login, '/login')
