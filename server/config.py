@@ -9,7 +9,8 @@ from sqlalchemy import MetaData
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
-from flasgger import Swagger  
+from flasgger import Swagger
+from flask_mail import Mail  
 
 load_dotenv()
 
@@ -22,6 +23,7 @@ db = SQLAlchemy(metadata=metadata)
 migrate = Migrate()
 bcrypt = Bcrypt()
 jwt = JWTManager()
+mail = Mail()
 
 blacklist = set()
 
@@ -51,6 +53,13 @@ def create_app(test_config=None):
     app.config['JWT_BLACKLIST_ENABLED'] = True
     app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access']
     app.config['GOOGLE_MAPS_API_KEY'] = os.getenv('GOOGLE_MAPS_API_KEY')
+    
+    # Email configuration
+    app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+    app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
+    app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True').lower() == 'true'
+    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 
     if test_config:
         app.config.update(test_config)
@@ -60,6 +69,7 @@ def create_app(test_config=None):
     migrate.init_app(app, db)
     bcrypt.init_app(app)
     jwt.init_app(app)
+    mail.init_app(app)
     CORS(app, supports_credentials=True)
 
     # Initialize Swagger ✅
@@ -82,6 +92,10 @@ def create_app(test_config=None):
         ParcelHistoryList, ParcelHistoryDetail,AdminParcelDetail
     )
     from server.routes.parcels import ParcelList, ParcelResource, ParcelCancel, ParcelDestination, ParcelStatus
+    from server.routes.email_routes import (
+        EmailParcelCreated, EmailStatusUpdate, EmailLocationUpdate,
+        EmailParcelCancelled, EmailWelcome, EmailPasswordReset, EmailTest
+    )
     api.add_resource(Home, '/')
     api.add_resource(Signup, '/signup')
     api.add_resource(Login, '/login')
@@ -98,6 +112,16 @@ def create_app(test_config=None):
     api.add_resource(ParcelCancel, '/parcels/<int:parcel_id>/cancel')
     api.add_resource(ParcelDestination, '/parcels/<int:parcel_id>/destination')
     api.add_resource(ParcelStatus, '/parcels/<int:parcel_id>/status')
+    
+    # Email routes
+    api.add_resource(EmailParcelCreated, '/email/parcel-created')
+    api.add_resource(EmailStatusUpdate, '/email/status-update')
+    api.add_resource(EmailLocationUpdate, '/email/location-update')
+    api.add_resource(EmailParcelCancelled, '/email/parcel-cancelled')
+    api.add_resource(EmailWelcome, '/email/welcome')
+    api.add_resource(EmailPasswordReset, '/email/password-reset')
+    api.add_resource(EmailTest, '/email/test')
+    
     print("After registering API resources")
 
     return app
