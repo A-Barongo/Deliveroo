@@ -14,7 +14,7 @@ def send_async_email(app, msg):
 def send_email(subject, recipients, html_body, text_body=None):
     """Send email using Flask-Mail."""
     app = current_app._get_current_object()
-    msg = Message(subject, recipients=recipients)
+    msg = Message(subject, recipients=recipients, sender=app.config['MAIL_USERNAME'])
     msg.html = html_body
     if text_body:
         msg.body = text_body
