@@ -93,6 +93,87 @@ class Signup(Resource):
             return {'error': 'Signup failed. Please check your input.'}, 422
 
 
+class Register(Resource):
+    """Resource for user registration (alias for signup)."""
+
+    def post(self):
+        """
+        Register a new user (alias for signup).
+        ---
+        tags:
+          - Auth
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - username
+                  - email
+                  - phone_number
+                  - password
+                properties:
+                  username:
+                    type: string
+                    example: johndoe
+                  email:
+                    type: string
+                    example: johndoe@example.com
+                  phone_number:
+                    type: string
+                    example: "+1234567890"
+                  password:
+                    type: string
+                    example: secret123
+                  admin:
+                    type: boolean
+                    example: false
+        responses:
+          201:
+            description: User created
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    user:
+                      type: object
+                    access_token:
+                      type: string
+          422:
+            description: Registration failed (validation or conflict)
+        """
+        data = request.get_json()
+
+        try:
+            if User.query.filter(
+                (User.username == data['username']) | (User.email == data['email'])
+            ).first():
+                return {"error": "Username or email already exists"}, 422
+
+            user = User(
+                username=data['username'],
+                email=data['email'],
+                phone_number=data['phone_number'],
+                admin=data.get('admin', False)
+            )
+            user.password = data['password']
+
+            db.session.add(user)
+            db.session.commit()
+
+            access_token = create_access_token(identity=user.id)
+            return {
+                "user": user.to_dict(),
+                "access_token": access_token
+            }, 201
+
+        except (KeyError, ValueError, IntegrityError):
+            db.session.rollback()
+            return {'error': 'Registration failed. Please check your input.'}, 422
+
+
 class Profile(Resource):
     """Resource for user profile."""
 

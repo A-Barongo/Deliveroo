@@ -100,7 +100,7 @@ def create_app(test_config=None):
 
     print("Before registering API resources")
     # Register API resources
-    from server.routes.profile import Signup, Logout, Profile,Home
+    from server.routes.profile import Signup, Register, Logout, Profile,Home
     from server.routes.auth_routes import Login
     from server.routes.admin_routes import (
         AdminParcelList, UpdateParcelStatus, UpdateParcelLocation,
@@ -113,7 +113,7 @@ def create_app(test_config=None):
     )
     api.add_resource(Home, '/')
     api.add_resource(Signup, '/signup')
-    api.add_resource(Signup, '/register')  # Add register endpoint for frontend compatibility
+    api.add_resource(Register, '/register')  # Add register endpoint for frontend compatibility
     api.add_resource(Login, '/login')
     api.add_resource(Logout, '/logout')
     api.add_resource(Profile, '/profile')
