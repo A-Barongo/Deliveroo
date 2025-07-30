@@ -71,7 +71,21 @@ def create_app(test_config=None):
     bcrypt.init_app(app)
     jwt.init_app(app)
     mail.init_app(app)
-    CORS(app, supports_credentials=True)
+    # CORS configuration for development and production
+    CORS(app, 
+         supports_credentials=True,
+         origins=[
+             "http://localhost:3000",  # React development server
+             "http://localhost:3001",  # Alternative React port
+             "http://127.0.0.1:3000", # Alternative localhost
+             "http://127.0.0.1:3001", # Alternative localhost
+             "https://deliveroo-server.onrender.com",  # Production backend
+             "https://your-frontend-domain.com"  # Replace with your frontend domain
+         ],
+         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+         allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+         expose_headers=["Content-Type", "Authorization"]
+    )
 
     # Initialize Swagger ✅
     Swagger(app, template=swagger_template)
@@ -99,6 +113,7 @@ def create_app(test_config=None):
     )
     api.add_resource(Home, '/')
     api.add_resource(Signup, '/signup')
+    api.add_resource(Signup, '/register')  # Add register endpoint for frontend compatibility
     api.add_resource(Login, '/login')
     api.add_resource(Logout, '/logout')
     api.add_resource(Profile, '/profile')
