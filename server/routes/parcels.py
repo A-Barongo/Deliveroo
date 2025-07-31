@@ -8,18 +8,12 @@ from server.config import db
 
 
 def _normalize_parcel_payload(raw: dict) -> dict:
-    """
-    Map common frontend keys to model column names and coerce types where safe.
-    This makes the API tolerant to small naming differences.
-    """
+    """Map frontend keys to Parcel model fields, coerce types."""
     data = dict(raw or {})
 
-    # ---- Field aliases (frontend -> model) ----
     aliases = {
-        # pickup lat/lng
         "pickup_longitude": "pick_up_longitude",
         "pickup_latitude": "pick_up_latitude",
-        # sometimes camelCase from forms
         "pickupLocationText": "pickup_location_text",
         "destinationLocationText": "destination_location_text",
         "receiver_name": "recipient_name",
@@ -33,7 +27,6 @@ def _normalize_parcel_payload(raw: dict) -> dict:
         if k_src in data and k_dst not in data:
             data[k_dst] = data.pop(k_src)
 
-    # ---- Type coercions (best effort) ----
     def _to_float(x):
         try:
             return float(x) if x is not None and x != "" else None
@@ -41,30 +34,19 @@ def _normalize_parcel_payload(raw: dict) -> dict:
             return None
 
     for key in [
-        "weight",
-        "pick_up_longitude",
-        "pick_up_latitude",
-        "destination_longitude",
-        "destination_latitude",
-        "current_location_longitude",
-        "current_location_latitude",
-        "distance",
-        "cost",
+        "weight", "pick_up_longitude", "pick_up_latitude",
+        "destination_longitude", "destination_latitude",
+        "current_location_longitude", "current_location_latitude",
+        "distance", "cost",
     ]:
         if key in data:
             data[key] = _to_float(data[key])
 
-    # Trim strings
     for key in [
-        "pickup_location_text",
-        "destination_location_text",
-        "sender_name",
-        "sender_phone_number",
-        "recipient_name",
-        "recipient_phone_number",
-        "description",
-        "current_location",
-        "status",
+        "pickup_location_text", "destination_location_text",
+        "sender_name", "sender_phone_number",
+        "recipient_name", "recipient_phone_number",
+        "description", "current_location", "status",
     ]:
         if key in data and isinstance(data[key], str):
             data[key] = data[key].strip()
@@ -82,10 +64,7 @@ class ParcelList(Resource):
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 10))
 
-        if user and user.admin:
-            query = Parcel.query
-        else:
-            query = Parcel.query.filter_by(user_id=user_id)
+        query = Parcel.query if user and user.admin else Parcel.query.filter_by(user_id=user_id)
 
         parcels = query.offset((page - 1) * per_page).limit(per_page).all()
         total = query.count()
@@ -102,21 +81,21 @@ class ParcelList(Resource):
         current_user_id = get_jwt_identity()
         raw = request.get_json(silent=True) or {}
 
-        # Basic required fields (text labels)
         required_fields = ['pickup_location_text', 'destination_location_text']
-        # Normalize before validation to allow alias keys
         data = _normalize_parcel_payload(raw)
+
+        # Remove any user-supplied user_id to prevent spoofing
+        data.pop("user_id", None)
 
         for field in required_fields:
             if not data.get(field):
                 return {"error": f"Missing required field: {field}"}, 400
 
         try:
-            # Compute cost if not provided (weight * 150)
             if data.get("cost") is None:
-                w = data.get("weight")
-                if isinstance(w, (int, float)):
-                    data["cost"] = w * 150
+                weight = data.get("weight")
+                if isinstance(weight, (int, float)):
+                    data["cost"] = weight * 150
 
             parcel = Parcel(**data, user_id=current_user_id)
             db.session.add(parcel)
@@ -126,7 +105,6 @@ class ParcelList(Resource):
 
         except Exception as e:
             db.session.rollback()
-            # Log detailed error to help diagnose
             current_app.logger.error("Parcel creation failed: %s", e)
             current_app.logger.error("Incoming payload (raw): %s", raw)
             current_app.logger.error("Normalized payload: %s", data)
@@ -185,12 +163,10 @@ class ParcelDestination(Resource):
         data = request.get_json(silent=True) or {}
         data = _normalize_parcel_payload(data)
 
-        # Accept either 'destination_location_text' or a generic 'destination'
         new_dest = data.get("destination_location_text") or data.get("destination")
         if new_dest:
             parcel.destination_location_text = new_dest.strip()
 
-        # Optional: lat/lng updates if provided
         if "destination_latitude" in data:
             parcel.destination_latitude = data["destination_latitude"]
         if "destination_longitude" in data:
@@ -221,3 +197,4 @@ class ParcelStatus(Resource):
         parcel.status = new_status
         db.session.commit()
         return parcel.to_dict(), 200
+
