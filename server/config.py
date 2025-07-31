@@ -81,15 +81,6 @@ def create_app(test_config=None):
     jwt.init_app(app)
     mail.init_app(app)
     limiter.init_app(app)
-<<<<<<< HEAD
-    # CORS configuration for development and production
-    CORS(app, 
-         supports_credentials=True,
-         origins="*",  # Allow all origins temporarily for debugging
-         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-         allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
-         expose_headers=["Content-Type", "Authorization"]
-=======
 
     # Import models *after* db is initialized to avoid circular import
     from server import models  # noqa: F401
