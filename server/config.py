@@ -160,6 +160,9 @@ def create_app(test_config=None):
         EmailParcelCancelled, EmailWelcome, EmailPasswordReset, EmailTest,
         EmailPreferences
     )
+    from server.routes.tracking_routes import (
+        StartTracking, GetTrackingInfo, StopTracking, LiveTracking
+    )
 
     api.add_resource(Home, '/')
     api.add_resource(Signup, '/signup')
@@ -188,6 +191,12 @@ def create_app(test_config=None):
     api.add_resource(EmailPasswordReset, '/email/password-reset')
     api.add_resource(EmailTest, '/email/test')
     api.add_resource(EmailPreferences, '/email/preferences/<int:user_id>')
+    
+    # Tracking routes
+    api.add_resource(StartTracking, '/tracking/<int:parcel_id>/start')
+    api.add_resource(GetTrackingInfo, '/tracking/<int:parcel_id>')
+    api.add_resource(StopTracking, '/tracking/<int:parcel_id>/stop')
+    api.add_resource(LiveTracking, '/tracking/<int:parcel_id>/live')
     
     print("After registering API resources")
 

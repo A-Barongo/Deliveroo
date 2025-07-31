@@ -5,6 +5,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from server.models import Parcel,User
 from server.config import db
 from server.services.sendgrid_service import SendGridService
+from server.services.tracking_service import tracking_service
 
 # Initialize SendGrid service
 sendgrid_service = SendGridService()
@@ -116,6 +117,13 @@ class ParcelList(Resource):
             except Exception as e:
                 # Log the error but don't fail parcel creation
                 print(f"Failed to send parcel created email: {str(e)}")
+            
+            # Start real-time tracking
+            try:
+                tracking_service.start_tracking(parcel.id)
+                print(f"Started tracking for parcel {parcel.id}")
+            except Exception as e:
+                print(f"Failed to start tracking: {str(e)}")
             
             return parcel.to_dict(), 201
         except Exception as e:
