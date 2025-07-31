@@ -3,6 +3,7 @@ import time
 import threading
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
+from flask import current_app
 from server.models import Parcel, db
 from server.services.sendgrid_service import SendGridService
 
@@ -44,63 +45,66 @@ class TrackingService:
         
     def _track_parcel(self, parcel_id: int):
         """Simulate parcel movement through different locations."""
-        parcel = Parcel.query.get(parcel_id)
-        if not parcel:
-            return
+        # Create application context for database access
+        with current_app.app_context():
+            parcel = Parcel.query.get(parcel_id)
+            if not parcel:
+                return
+                
+            # Get user for email notifications
+            user = parcel.user
             
-        # Get user for email notifications
-        user = parcel.user
-        
-        # Simulate movement through locations
-        for status, locations in self.location_sequence.items():
-            if status == 'pending':
-                # Quick updates for pending status
-                for location in locations:
-                    self._update_location(parcel, location, status, user)
-                    time.sleep(30)  # 30 seconds between updates
-                    
-            elif status == 'in_transit':
-                # Slower updates for in-transit
-                for location in locations:
-                    self._update_location(parcel, location, status, user)
-                    time.sleep(120)  # 2 minutes between updates
-                    
-            elif status == 'delivered':
-                # Final delivery
-                self._update_location(parcel, locations[0], status, user)
+            # Simulate movement through locations
+            for status, locations in self.location_sequence.items():
+                if status == 'pending':
+                    # Quick updates for pending status
+                    for location in locations:
+                        self._update_location(parcel, location, status, user)
+                        time.sleep(30)  # 30 seconds between updates
+                        
+                elif status == 'in_transit':
+                    # Slower updates for in-transit
+                    for location in locations:
+                        self._update_location(parcel, location, status, user)
+                        time.sleep(120)  # 2 minutes between updates
+                        
+                elif status == 'delivered':
+                    # Final delivery
+                    self._update_location(parcel, locations[0], status, user)
                 
     def _update_location(self, parcel: Parcel, location: str, status: str, user):
         """Update parcel location and send notification."""
         try:
-            old_location = parcel.current_location
-            old_status = parcel.status
-            
-            # Update parcel
-            parcel.current_location = location
-            parcel.status = status
-            parcel.updated_at = datetime.now()
-            
-            # Save to database
-            db.session.commit()
-            
-            # Send email notification if status changed
-            if old_status != status and user:
-                self.sendgrid_service.send_status_update_email(
-                    user.email, 
-                    parcel.to_dict(), 
-                    old_status, 
-                    status
-                )
-            
-            # Send location update email
-            if old_location != location and user:
-                self.sendgrid_service.send_location_update_email(
-                    user.email,
-                    parcel.to_dict(),
-                    old_location or 'Not set',
-                    location
-                )
+            with current_app.app_context():
+                old_location = parcel.current_location
+                old_status = parcel.status
                 
+                # Update parcel
+                parcel.current_location = location
+                parcel.status = status
+                parcel.updated_at = datetime.now()
+                
+                # Save to database
+                db.session.commit()
+                
+                # Send email notification if status changed
+                if old_status != status and user:
+                    self.sendgrid_service.send_status_update_email(
+                        user.email, 
+                        parcel.to_dict(), 
+                        old_status, 
+                        status
+                    )
+                
+                # Send location update email
+                if old_location != location and user:
+                    self.sendgrid_service.send_location_update_email(
+                        user.email,
+                        parcel.to_dict(),
+                        old_location or 'Not set',
+                        location
+                    )
+                    
         except Exception as e:
             print(f"Error updating parcel {parcel.id}: {str(e)}")
             
