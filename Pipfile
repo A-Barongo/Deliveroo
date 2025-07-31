@@ -18,6 +18,7 @@ flask-restful = "*"
 sqlalchemy = "*"
 sqlalchemy-serializer = "*"
 flask-bcrypt = "*"
+flask-limiter = "*"
 
 [dev-packages]
 pytest = "*"
