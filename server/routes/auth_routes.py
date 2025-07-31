@@ -50,13 +50,15 @@ class Login(Resource):
     def post(self):
         data = request.get_json()
 
-        username = data.get('username')
+        identifier = data.get('username')
         password = data.get('password')
 
-        if not username or not password:
+        if not identifier  or not password:
             return {'error': 'Missing credentials'}, 400
 
-        user = User.query.filter_by(username=username).first()
+        user = User.query.filter_by(username=identifier ).first()
+        if not user:
+            user = User.query.filter_by(email=identifier).first()
 
         if user and user.authenticate(password):
             access_token = create_access_token(identity=user.id)
