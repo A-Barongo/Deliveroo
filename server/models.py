@@ -75,6 +75,9 @@ class Parcel(db.Model):
     current_location_latitude = db.Column(db.Float)
     distance = db.Column(db.Float)
     cost = db.Column(db.Float)
+    estimated_delivery = db.Column(db.DateTime)
+    progress = db.Column(db.Integer, default=0)  # 0-100 percentage
+    map_position = db.Column(db.Text)  # JSON string for lat/lng
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     recipient_name = db.Column(db.String(64))

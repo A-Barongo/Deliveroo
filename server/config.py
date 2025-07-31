@@ -154,7 +154,7 @@ def create_app(test_config=None):
         AdminParcelList, UpdateParcelStatus, UpdateParcelLocation,
         ParcelHistoryList, ParcelHistoryDetail, AdminParcelDetail
     )
-    from server.routes.parcels import ParcelList, ParcelResource, ParcelCancel, ParcelDestination, ParcelStatus
+    from server.routes.parcels import ParcelList, ParcelResource, ParcelCancel, ParcelDestination, ParcelStatus, ParcelStatusUpdate
     from server.routes.email_routes import (
         EmailParcelCreated, EmailStatusUpdate, EmailLocationUpdate,
         EmailParcelCancelled, EmailWelcome, EmailPasswordReset, EmailTest,
@@ -181,6 +181,7 @@ def create_app(test_config=None):
     api.add_resource(ParcelCancel, '/parcels/<int:parcel_id>/cancel')
     api.add_resource(ParcelDestination, '/parcels/<int:parcel_id>/destination')
     api.add_resource(ParcelStatus, '/parcels/<int:parcel_id>/status')
+    api.add_resource(ParcelStatusUpdate, '/parcels/<int:parcel_id>/status-update')
 
     # Email routes
     api.add_resource(EmailParcelCreated, '/email/parcel-created')

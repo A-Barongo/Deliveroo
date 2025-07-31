@@ -1,4 +1,6 @@
 """Parcel routes for Deliveroo app."""
+import json
+from datetime import datetime
 from flask import request
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -345,3 +347,107 @@ class ParcelStatus(Resource):
         parcel.status = new_status
         db.session.commit()
         return parcel.to_dict(), 200
+
+
+class ParcelStatusUpdate(Resource):
+    """Update parcel status and tracking information."""
+    
+    @jwt_required()
+    def put(self, parcel_id):
+        """
+        Update parcel status and tracking information.
+        ---
+        tags:
+          - Parcels
+        parameters:
+          - name: parcel_id
+            in: path
+            required: true
+            type: integer
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  current_location:
+                    type: string
+                  estimated_delivery:
+                    type: string
+                    format: date-time
+                  progress:
+                    type: integer
+                    minimum: 0
+                    maximum: 100
+                  map_position:
+                    type: object
+                    properties:
+                      lat:
+                        type: number
+                      lng:
+                        type: number
+        responses:
+          200:
+            description: Parcel status updated successfully
+          403:
+            description: Unauthorized access
+          404:
+            description: Parcel not found
+          500:
+            description: Server error
+        """
+        try:
+            current_user_id = get_jwt_identity()
+            data = request.get_json()
+            
+            # Get the parcel
+            parcel = Parcel.query.get_or_404(parcel_id)
+            
+            # Check if user owns this parcel or is admin
+            user = User.query.get(current_user_id)
+            if not user:
+                return {"error": "User not found"}, 404
+                
+            if parcel.user_id != current_user_id and not user.admin:
+                return {"error": "Unauthorized"}, 403
+            
+            # Update parcel status and related fields
+            if 'status' in data:
+                parcel.status = data['status']
+            if 'current_location' in data:
+                parcel.current_location = data['current_location']
+            if 'estimated_delivery' in data:
+                try:
+                    parcel.estimated_delivery = datetime.fromisoformat(data['estimated_delivery'].replace('Z', '+00:00'))
+                except ValueError:
+                    return {"error": "Invalid date format for estimated_delivery"}, 400
+            if 'progress' in data:
+                progress = data['progress']
+                if not isinstance(progress, int) or progress < 0 or progress > 100:
+                    return {"error": "Progress must be an integer between 0 and 100"}, 400
+                parcel.progress = progress
+            if 'map_position' in data:
+                parcel.map_position = json.dumps(data['map_position'])
+            
+            # Update timestamp
+            parcel.updated_at = datetime.now()
+            
+            db.session.commit()
+            
+            # Return updated parcel
+            return {
+                'id': parcel.id,
+                'status': parcel.status,
+                'current_location': parcel.current_location,
+                'estimated_delivery': parcel.estimated_delivery.isoformat() if parcel.estimated_delivery else None,
+                'last_updated': parcel.updated_at.isoformat(),
+                'progress': getattr(parcel, 'progress', 0),
+                'map_position': parcel.map_position
+            }, 200
+            
+        except Exception as e:
+            db.session.rollback()
+            return {"error": str(e)}, 500
