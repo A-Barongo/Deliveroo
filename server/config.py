@@ -8,6 +8,8 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
 from flasgger import Swagger
 from flask_mail import Mail  
@@ -24,6 +26,10 @@ migrate = Migrate()
 bcrypt = Bcrypt()
 jwt = JWTManager()
 mail = Mail()
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"]
+)
 
 blacklist = set()
 
@@ -74,6 +80,7 @@ def create_app(test_config=None):
     bcrypt.init_app(app)
     jwt.init_app(app)
     mail.init_app(app)
+    limiter.init_app(app)
 <<<<<<< HEAD
     # CORS configuration for development and production
     CORS(app, 

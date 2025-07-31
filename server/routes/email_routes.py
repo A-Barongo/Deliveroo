@@ -2,13 +2,14 @@
 from flask import request, jsonify
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_limiter.util import get_remote_address
+from flask_limiter import Limiter
 from flasgger import swag_from
 from server.models import User, Parcel
-from server.services.email_service import (
-    send_parcel_created_email, send_status_update_email,
-    send_location_update_email, send_parcel_cancelled_email,
-    send_welcome_email, send_password_reset_email, send_test_email
-)
+from server.services.sendgrid_service import SendGridService
+
+# Initialize SendGrid service
+sendgrid_service = SendGridService()
 
 class EmailPreferences(Resource):
     """Handle email preferences for users."""
@@ -157,8 +158,17 @@ class EmailParcelCreated(Resource):
             return {"error": "Parcel not found"}, 404
         
         try:
-            send_parcel_created_email(user_email, parcel.to_dict())
-            return {"message": "Parcel created email sent successfully"}, 200
+            # Get user details for email
+            user = User.query.get(current_user_id)
+            username = user.username if user else "User"
+            
+            # Send email using SendGrid
+            success = sendgrid_service.send_parcel_created_email(user_email, parcel.to_dict(), username)
+            
+            if success:
+                return {"message": "Parcel created email sent successfully"}, 200
+            else:
+                return {"error": "Failed to send email via SendGrid"}, 500
         except Exception as e:
             return {"error": f"Failed to send email: {str(e)}"}, 500
 
@@ -209,8 +219,13 @@ class EmailStatusUpdate(Resource):
             return {"error": "Parcel not found"}, 404
         
         try:
-            send_status_update_email(user_email, parcel.to_dict(), old_status, new_status)
-            return {"message": "Status update email sent successfully"}, 200
+            # Send email using SendGrid
+            success = sendgrid_service.send_status_update_email(user_email, parcel.to_dict(), old_status, new_status)
+            
+            if success:
+                return {"message": "Status update email sent successfully"}, 200
+            else:
+                return {"error": "Failed to send email via SendGrid"}, 500
         except Exception as e:
             return {"error": f"Failed to send email: {str(e)}"}, 500
 
@@ -418,7 +433,8 @@ class EmailTest(Resource):
         },
         'responses': {
             200: {'description': 'Test email sent successfully'},
-            400: {'description': 'Missing user_email'}
+            400: {'description': 'Missing user_email'},
+            429: {'description': 'Rate limit exceeded'}
         }
     })
     @jwt_required()
@@ -430,7 +446,12 @@ class EmailTest(Resource):
             return {"error": "Missing user_email"}, 400
         
         try:
-            send_test_email(user_email)
-            return {"message": "Test email sent successfully"}, 200
+            # Send test email using SendGrid
+            success = sendgrid_service.send_test_email(user_email)
+            
+            if success:
+                return {"message": "Test email sent successfully"}, 200
+            else:
+                return {"error": "Failed to send test email via SendGrid"}, 500
         except Exception as e:
             return {"error": f"Failed to send email: {str(e)}"}, 500 
