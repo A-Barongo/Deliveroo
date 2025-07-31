@@ -9,7 +9,8 @@ venv/
 .env/
 .env
 
-
+# Pipenv
+Pipfile.lock
 
 # SQLite database
 *.sqlite3
