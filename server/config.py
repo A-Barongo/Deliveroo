@@ -84,6 +84,10 @@ def create_app(test_config=None):
 
     # Import models *after* db is initialized to avoid circular import
     from server import models  # noqa: F401
+    
+    # Initialize tracking service with app context
+    from server.services.tracking_service import init_tracking_service
+    init_tracking_service(app)
 
     # ---- CORS configuration ----
     origins_env = os.getenv("CORS_ORIGINS")

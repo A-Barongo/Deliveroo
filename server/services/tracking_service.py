@@ -3,14 +3,14 @@ import time
 import threading
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
-from flask import current_app
 from server.models import Parcel, db
 from server.services.sendgrid_service import SendGridService
 
 class TrackingService:
     """Simulates real-time parcel tracking."""
     
-    def __init__(self):
+    def __init__(self, app=None):
+        self.app = app
         self.sendgrid_service = SendGridService()
         self.tracking_threads = {}
         self.location_sequence = {
@@ -35,6 +35,10 @@ class TrackingService:
         
     def start_tracking(self, parcel_id: int):
         """Start tracking a parcel with simulated movement."""
+        if not self.app:
+            print(f"Warning: Tracking service not initialized with app context for parcel {parcel_id}")
+            return
+            
         if parcel_id in self.tracking_threads:
             return  # Already tracking
             
@@ -46,7 +50,7 @@ class TrackingService:
     def _track_parcel(self, parcel_id: int):
         """Simulate parcel movement through different locations."""
         # Create application context for database access
-        with current_app.app_context():
+        with self.app.app_context():
             parcel = Parcel.query.get(parcel_id)
             if not parcel:
                 return
@@ -75,7 +79,7 @@ class TrackingService:
     def _update_location(self, parcel: Parcel, location: str, status: str, user):
         """Update parcel location and send notification."""
         try:
-            with current_app.app_context():
+            with self.app.app_context():
                 old_location = parcel.current_location
                 old_status = parcel.status
                 
@@ -145,4 +149,9 @@ class TrackingService:
             del self.tracking_threads[parcel_id]
 
 # Global tracking service instance
-tracking_service = TrackingService() 
+tracking_service = None
+
+def init_tracking_service(app):
+    """Initialize the global tracking service with the Flask app."""
+    global tracking_service
+    tracking_service = TrackingService(app) 
