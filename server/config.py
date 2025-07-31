@@ -129,7 +129,8 @@ def create_app(test_config=None):
     from server.routes.parcels import ParcelList, ParcelResource, ParcelCancel, ParcelDestination, ParcelStatus
     from server.routes.email_routes import (
         EmailParcelCreated, EmailStatusUpdate, EmailLocationUpdate,
-        EmailParcelCancelled, EmailWelcome, EmailPasswordReset, EmailTest
+        EmailParcelCancelled, EmailWelcome, EmailPasswordReset, EmailTest,
+        EmailPreferences
     )
     api.add_resource(Home, '/')
     api.add_resource(Signup, '/signup')
@@ -157,6 +158,7 @@ def create_app(test_config=None):
     api.add_resource(EmailWelcome, '/email/welcome')
     api.add_resource(EmailPasswordReset, '/email/password-reset')
     api.add_resource(EmailTest, '/email/test')
+    api.add_resource(EmailPreferences, '/email/preferences/<int:user_id>')
     
     print("After registering API resources")
 

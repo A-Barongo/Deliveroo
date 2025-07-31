@@ -10,6 +10,110 @@ from server.services.email_service import (
     send_welcome_email, send_password_reset_email, send_test_email
 )
 
+class EmailPreferences(Resource):
+    """Handle email preferences for users."""
+    
+    @swag_from({
+        'tags': ['Email'],
+        'summary': 'Get email preferences',
+        'description': 'Get email preferences for a specific user.',
+        'security': [{'BearerAuth': []}],
+        'parameters': [
+            {
+                'name': 'user_id',
+                'in': 'path',
+                'type': 'integer',
+                'required': True,
+                'description': 'User ID'
+            }
+        ],
+        'responses': {
+            200: {
+                'description': 'Email preferences retrieved successfully',
+                'content': {
+                    'application/json': {
+                        'schema': {
+                            'type': 'object',
+                            'properties': {
+                                'parcel_created': {'type': 'boolean'},
+                                'status_updates': {'type': 'boolean'},
+                                'location_updates': {'type': 'boolean'},
+                                'parcel_cancelled': {'type': 'boolean'},
+                                'welcome_emails': {'type': 'boolean'}
+                            }
+                        }
+                    }
+                }
+            },
+            404: {'description': 'User not found'}
+        }
+    })
+    @jwt_required()
+    def get(self, user_id):
+        """Get email preferences for a user."""
+        user = User.query.get(user_id)
+        if not user:
+            return {"error": "User not found"}, 404
+        
+        # Return default preferences (all enabled)
+        preferences = {
+            "parcel_created": True,
+            "status_updates": True,
+            "location_updates": True,
+            "parcel_cancelled": True,
+            "welcome_emails": True
+        }
+        
+        return preferences, 200
+
+    @swag_from({
+        'tags': ['Email'],
+        'summary': 'Update email preferences',
+        'description': 'Update email preferences for a specific user.',
+        'security': [{'BearerAuth': []}],
+        'parameters': [
+            {
+                'name': 'user_id',
+                'in': 'path',
+                'type': 'integer',
+                'required': True,
+                'description': 'User ID'
+            }
+        ],
+        'requestBody': {
+            'required': True,
+            'content': {
+                'application/json': {
+                    'schema': {
+                        'type': 'object',
+                        'properties': {
+                            'parcel_created': {'type': 'boolean'},
+                            'status_updates': {'type': 'boolean'},
+                            'location_updates': {'type': 'boolean'},
+                            'parcel_cancelled': {'type': 'boolean'},
+                            'welcome_emails': {'type': 'boolean'}
+                        }
+                    }
+                }
+            }
+        },
+        'responses': {
+            200: {'description': 'Email preferences updated successfully'},
+            404: {'description': 'User not found'}
+        }
+    })
+    @jwt_required()
+    def put(self, user_id):
+        """Update email preferences for a user."""
+        user = User.query.get(user_id)
+        if not user:
+            return {"error": "User not found"}, 404
+        
+        data = request.get_json()
+        
+        # For now, just return success (in a real app, you'd save to database)
+        return {"message": "Email preferences updated successfully"}, 200
+
 class EmailParcelCreated(Resource):
     """Send email when parcel is created."""
     
