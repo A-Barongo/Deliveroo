@@ -37,7 +37,7 @@ class TrackingService:
         if parcel_id in self.tracking_threads:
             return  # Already tracking
             
-        thread = threading.Thread(target=self._track_parcel, args=(parcel_id))
+        thread = threading.Thread(target=self._track_parcel, args=(parcel_id,))
         thread.daemon = True
         thread.start()
         self.tracking_threads[parcel_id] = thread
@@ -56,20 +56,20 @@ class TrackingService:
             if status == 'pending':
                 # Quick updates for pending status
                 for location in locations:
-                    self._update_location(parcel, location, status)
+                    self._update_location(parcel, location, status, user)
                     time.sleep(30)  # 30 seconds between updates
                     
             elif status == 'in_transit':
                 # Slower updates for in-transit
                 for location in locations:
-                    self._update_location(parcel, location, status)
+                    self._update_location(parcel, location, status, user)
                     time.sleep(120)  # 2 minutes between updates
                     
             elif status == 'delivered':
                 # Final delivery
-                self._update_location(parcel, locations[0], status)
+                self._update_location(parcel, locations[0], status, user)
                 
-    def _update_location(self, parcel: Parcel, location: str, status: str):
+    def _update_location(self, parcel: Parcel, location: str, status: str, user):
         """Update parcel location and send notification."""
         try:
             old_location = parcel.current_location
