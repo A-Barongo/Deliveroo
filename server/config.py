@@ -1,6 +1,6 @@
 import os
 from datetime import timedelta
-from flask import Flask
+from flask import Flask, request
 from flask_bcrypt import Bcrypt
 from flask_migrate import Migrate
 from flask_restful import Api
@@ -80,12 +80,54 @@ def create_app(test_config=None):
              "http://127.0.0.1:3000", # Alternative localhost
              "http://127.0.0.1:3001", # Alternative localhost
              "https://deliveroo-server.onrender.com",  # Production backend
-             "https://your-frontend-domain.com"  # Replace with your frontend domain
+             "https://your-frontend-domain.com",  # Replace with your frontend domain
+             "*"  # Allow all origins for development (remove in production)
          ],
          methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
          allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
          expose_headers=["Content-Type", "Authorization"]
     )
+
+    # Add CORS preflight handler
+    @app.after_request
+    def after_request(response):
+        """Add CORS headers to all responses."""
+        origin = request.headers.get('Origin')
+        if origin in [
+            "http://localhost:3000",
+            "http://localhost:3001", 
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:3001",
+            "https://deliveroo-server.onrender.com",
+            "https://your-frontend-domain.com"
+        ]:
+            response.headers.add('Access-Control-Allow-Origin', origin)
+        
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+
+    # Add OPTIONS route handler for preflight requests
+    @app.route('/<path:path>', methods=['OPTIONS'])
+    def handle_options(path):
+        """Handle OPTIONS requests for CORS preflight."""
+        response = app.make_default_options_response()
+        origin = request.headers.get('Origin')
+        if origin in [
+            "http://localhost:3000",
+            "http://localhost:3001", 
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:3001",
+            "https://deliveroo-server.onrender.com",
+            "https://your-frontend-domain.com"
+        ]:
+            response.headers.add('Access-Control-Allow-Origin', origin)
+        
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
 
     # Initialize Swagger ✅
     Swagger(app, template=swagger_template)
