@@ -4,6 +4,10 @@ from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from server.models import Parcel,User
 from server.config import db
+from server.services.sendgrid_service import SendGridService
+
+# Initialize SendGrid service
+sendgrid_service = SendGridService()
 
 
 class ParcelList(Resource):
@@ -103,6 +107,16 @@ class ParcelList(Resource):
             parcel = Parcel(**data, user_id=current_user_id)
             db.session.add(parcel)
             db.session.commit()
+            
+            # Send parcel created email
+            try:
+                user = User.query.get(current_user_id)
+                if user:
+                    sendgrid_service.send_parcel_created_email(user.email, parcel.to_dict(), user.username)
+            except Exception as e:
+                # Log the error but don't fail parcel creation
+                print(f"Failed to send parcel created email: {str(e)}")
+            
             return parcel.to_dict(), 201
         except Exception as e:
             db.session.rollback()
@@ -182,6 +196,16 @@ class ParcelCancel(Resource):
 
         parcel.status = 'cancelled'
         db.session.commit()
+        
+        # Send parcel cancelled email
+        try:
+            user = User.query.get(user_id)
+            if user:
+                sendgrid_service.send_parcel_cancelled_email(user.email, parcel.to_dict(), user.username)
+        except Exception as e:
+            # Log the error but don't fail cancellation
+            print(f"Failed to send parcel cancelled email: {str(e)}")
+        
         return parcel.to_dict(), 200
 
 
@@ -233,11 +257,28 @@ class ParcelDestination(Resource):
             return {"error": "Cannot update delivered parcel"}, 400
 
         data = request.get_json()
+        old_destination = parcel.destination_location_text
+        
         for field in ["destination_location_text", "destination_latitude", "destination_longitude"]:
             if field in data:
                 setattr(parcel, field, data[field])
 
         db.session.commit()
+        
+        # Send destination update email if destination changed
+        try:
+            user = User.query.get(current_user_id)
+            if user and old_destination != parcel.destination_location_text:
+                sendgrid_service.send_destination_update_email(
+                    user.email, 
+                    parcel.to_dict(), 
+                    old_destination, 
+                    parcel.destination_location_text
+                )
+        except Exception as e:
+            # Log the error but don't fail update
+            print(f"Failed to send destination update email: {str(e)}")
+        
         return parcel.to_dict(), 200
 
 

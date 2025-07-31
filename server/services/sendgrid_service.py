@@ -174,4 +174,131 @@ class SendGridService:
         </html>
         """
         
-        return self.send_email(user_email, subject, html_content) 
+        return self.send_email(user_email, subject, html_content)
+    
+    def send_parcel_cancelled_email(self, user_email: str, parcel_data: Dict, username: str) -> bool:
+        """Send parcel cancelled email."""
+        subject = f"Parcel #{parcel_data.get('id', 'N/A')} Cancelled! ❌"
+        
+        html_content = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                    <h1 style="margin: 0;">❌ Parcel Cancelled</h1>
+                    <p style="margin: 10px 0;">Hello {username}, your parcel has been cancelled</p>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 20px;">
+                    <h2 style="color: #333; margin-top: 0;">📦 Cancelled Parcel Details</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Parcel ID:</strong></td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{parcel_data.get('id', 'N/A')}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Pickup Location:</strong></td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{parcel_data.get('pickup_location_text', 'N/A')}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Destination:</strong></td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{parcel_data.get('destination_location_text', 'N/A')}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Status:</strong></td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd; color: #dc3545; font-weight: bold;">Cancelled</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #e9ecef; border-radius: 5px; font-size: 14px; color: #666;">
+                    <p style="margin: 0;">If you have any questions about this cancellation, please contact our support team.</p>
+                </div>
+            </body>
+        </html>
+        """
+        
+        return self.send_email(user_email, subject, html_content)
+    
+    def send_location_update_email(self, user_email: str, parcel_data: Dict, old_location: str, new_location: str) -> bool:
+        """Send location update email."""
+        subject = f"Parcel #{parcel_data.get('id', 'N/A')} Location Updated! 📍"
+        
+        html_content = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                    <h1 style="margin: 0;">📍 Location Update!</h1>
+                    <p style="margin: 10px 0;">Your parcel location has been updated</p>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 20px;">
+                    <h2 style="color: #333; margin-top: 0;">📦 Parcel Details</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Parcel ID:</strong></td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{parcel_data.get('id', 'N/A')}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Previous Location:</strong></td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{old_location or 'Not set'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>New Location:</strong></td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd; color: #17a2b8; font-weight: bold;">{new_location}</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <a href="{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/track/{parcel_data.get('id', '')}" 
+                       style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                        🚚 Track Your Parcel
+                    </a>
+                </div>
+            </body>
+        </html>
+        """
+        
+        return self.send_email(user_email, subject, html_content)
+    
+    def send_destination_update_email(self, user_email: str, parcel_data: Dict, old_destination: str, new_destination: str) -> bool:
+        """Send destination update email."""
+        subject = f"Parcel #{parcel_data.get('id', 'N/A')} Destination Updated! 🎯"
+        
+        html_content = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%); color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                    <h1 style="margin: 0;">🎯 Destination Updated!</h1>
+                    <p style="margin: 10px 0;">Your parcel destination has been updated</p>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 20px;">
+                    <h2 style="color: #333; margin-top: 0;">📦 Parcel Details</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Parcel ID:</strong></td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{parcel_data.get('id', 'N/A')}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Previous Destination:</strong></td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{old_destination or 'Not set'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>New Destination:</strong></td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd; color: #ffc107; font-weight: bold;">{new_destination}</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <a href="{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/track/{parcel_data.get('id', '')}" 
+                       style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                        🚚 Track Your Parcel
+                    </a>
+                </div>
+            </body>
+        </html>
+        """
+        
+        return self.send_email(user_email, subject, html_content)

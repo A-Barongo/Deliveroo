@@ -7,6 +7,10 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from flasgger import swag_from
 from server.config import db
 from server.models import Parcel, User, ParcelHistory
+from server.services.sendgrid_service import SendGridService
+
+# Initialize SendGrid service
+sendgrid_service = SendGridService()
 
 # Utility to get current logged-in user
 def get_current_user():
@@ -139,6 +143,15 @@ class UpdateParcelStatus(Resource):
         )
         db.session.add(history)
         db.session.commit()
+        
+        # Send status update email
+        try:
+            user = User.query.get(parcel.user_id)
+            if user:
+                sendgrid_service.send_status_update_email(user.email, parcel.to_dict(), old_status, new_status)
+        except Exception as e:
+            # Log the error but don't fail status update
+            print(f"Failed to send status update email: {str(e)}")
 
         return {"message": "Parcel status updated", "parcel": parcel.to_dict()}, 200
 
@@ -204,6 +217,15 @@ class UpdateParcelLocation(Resource):
         )
         db.session.add(history)
         db.session.commit()
+        
+        # Send location update email
+        try:
+            user = User.query.get(parcel.user_id)
+            if user:
+                sendgrid_service.send_location_update_email(user.email, parcel.to_dict(), old_location, new_location)
+        except Exception as e:
+            # Log the error but don't fail location update
+            print(f"Failed to send location update email: {str(e)}")
 
         return {"message": "Parcel location updated", "parcel": parcel.to_dict()}, 200
 
