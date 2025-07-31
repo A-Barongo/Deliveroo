@@ -7,6 +7,7 @@ from flask_limiter import Limiter
 from flasgger import swag_from
 from server.models import User, Parcel
 from server.services.sendgrid_service import SendGridService
+from server.config import limiter
 
 # Initialize SendGrid service
 sendgrid_service = SendGridService()
@@ -438,6 +439,7 @@ class EmailTest(Resource):
         }
     })
     @jwt_required()
+    @limiter.limit("10 per minute")  # Reasonable limit for test emails
     def post(self):
         data = request.get_json()
         user_email = data.get('user_email')

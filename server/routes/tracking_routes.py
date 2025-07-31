@@ -5,6 +5,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from flasgger import swag_from
 from server.models import Parcel, User
 from server.services.tracking_service import tracking_service
+from server.config import limiter
 from datetime import datetime
 
 class StartTracking(Resource):
@@ -73,6 +74,7 @@ class GetTrackingInfo(Resource):
         }
     })
     @jwt_required()
+    @limiter.limit("100 per minute")  # More generous limit for tracking info
     def get(self, parcel_id):
         """Get tracking information for a parcel."""
         current_user_id = get_jwt_identity()
@@ -158,6 +160,7 @@ class LiveTracking(Resource):
         }
     })
     @jwt_required()
+    @limiter.limit("60 per minute")  # More generous limit for live tracking
     def get(self, parcel_id):
         """Get live tracking updates."""
         current_user_id = get_jwt_identity()

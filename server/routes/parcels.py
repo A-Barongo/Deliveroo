@@ -2,8 +2,9 @@
 from flask import request
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_limiter.util import get_remote_address
 from server.models import Parcel,User
-from server.config import db
+from server.config import db, limiter
 from server.services.sendgrid_service import SendGridService
 from server.services.tracking_service import tracking_service
 
@@ -14,6 +15,7 @@ sendgrid_service = SendGridService()
 class ParcelList(Resource):
     """List and create parcels."""
     @jwt_required()
+    @limiter.limit("100 per minute")  # More generous limit for parcel listing
     def get(self):
         """
         Get a paginated list of parcels.
