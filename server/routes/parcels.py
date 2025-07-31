@@ -116,14 +116,14 @@ class ParcelList(Resource):
             db.session.add(parcel)
             db.session.commit()
             
-            # Send parcel created email
-            try:
-                user = User.query.get(current_user_id)
-                if user:
-                    sendgrid_service.send_parcel_created_email(user.email, parcel.to_dict(), user.username)
-            except Exception as e:
-                # Log the error but don't fail parcel creation
-                print(f"Failed to send parcel created email: {str(e)}")
+            # Send parcel created email (disabled due to SendGrid limits)
+            # try:
+            #     user = User.query.get(current_user_id)
+            #     if user:
+            #         sendgrid_service.send_parcel_created_email(user.email, parcel.to_dict(), user.username)
+            # except Exception as e:
+            #     # Log the error but don't fail parcel creation
+            #     print(f"Failed to send parcel created email: {str(e)}")
             
             # Start real-time tracking
             try:

@@ -91,23 +91,29 @@ class TrackingService:
                 # Save to database
                 db.session.commit()
                 
-                # Send email notification if status changed
-                if old_status != status and user:
-                    self.sendgrid_service.send_status_update_email(
-                        user.email, 
-                        parcel.to_dict(), 
-                        old_status, 
-                        status
-                    )
+                # Send email notification if status changed (disabled due to SendGrid limits)
+                # if old_status != status and user:
+                #     try:
+                #         self.sendgrid_service.send_status_update_email(
+                #             user.email, 
+                #             parcel.to_dict(), 
+                #             old_status, 
+                #             status
+                #         )
+                #     except Exception as e:
+                #         print(f"Email notification failed: {str(e)}")
                 
-                # Send location update email
-                if old_location != location and user:
-                    self.sendgrid_service.send_location_update_email(
-                        user.email,
-                        parcel.to_dict(),
-                        old_location or 'Not set',
-                        location
-                    )
+                # Send location update email (disabled due to SendGrid limits)
+                # if old_location != location and user:
+                #     try:
+                #         self.sendgrid_service.send_location_update_email(
+                #             user.email,
+                #             parcel.to_dict(),
+                #             old_location or 'Not set',
+                #             location
+                #         )
+                #     except Exception as e:
+                #         print(f"Email notification failed: {str(e)}")
                     
         except Exception as e:
             print(f"Error updating parcel {parcel.id}: {str(e)}")
