@@ -38,9 +38,12 @@ class ParcelList(Resource):
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 10))
         
+        if not user:
+            return {"error": "User not found"}, 404
+        
         if user.admin:
             query = Parcel.query
-        elif user:
+        else:
             query = Parcel.query.filter_by(user_id=user_id)
         parcels = query.offset((page - 1) * per_page).limit(per_page).all()
         total = query.count()
