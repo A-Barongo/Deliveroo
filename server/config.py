@@ -74,15 +74,7 @@ def create_app(test_config=None):
     # CORS configuration for development and production
     CORS(app, 
          supports_credentials=True,
-         origins=[
-             "http://localhost:3000",  # React development server
-             "http://localhost:3001",  # Alternative React port
-             "http://127.0.0.1:3000", # Alternative localhost
-             "http://127.0.0.1:3001", # Alternative localhost
-             "https://deliveroo-server.onrender.com",  # Production backend
-             "https://deliveroo-frontend.onrender.com",  # Production frontend
-             "https://your-frontend-domain.com"  # Replace with your frontend domain
-         ],
+         origins="*",  # Allow all origins temporarily for debugging
          methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
          allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
          expose_headers=["Content-Type", "Authorization"]
@@ -93,15 +85,7 @@ def create_app(test_config=None):
     def after_request(response):
         """Add CORS headers to all responses."""
         origin = request.headers.get('Origin')
-        if origin in [
-            "http://localhost:3000",
-            "http://localhost:3001", 
-            "http://127.0.0.1:3000",
-            "http://127.0.0.1:3001",
-            "https://deliveroo-server.onrender.com",
-            "https://deliveroo-frontend.onrender.com",
-            "https://your-frontend-domain.com"
-        ]:
+        if origin:
             response.headers.add('Access-Control-Allow-Origin', origin)
         
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
@@ -115,15 +99,7 @@ def create_app(test_config=None):
         """Handle OPTIONS requests for CORS preflight."""
         response = app.make_default_options_response()
         origin = request.headers.get('Origin')
-        if origin in [
-            "http://localhost:3000",
-            "http://localhost:3001", 
-            "http://127.0.0.1:3000",
-            "http://127.0.0.1:3001",
-            "https://deliveroo-server.onrender.com",
-            "https://deliveroo-frontend.onrender.com",
-            "https://your-frontend-domain.com"
-        ]:
+        if origin:
             response.headers.add('Access-Control-Allow-Origin', origin)
         
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
