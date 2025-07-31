@@ -62,6 +62,9 @@ def create_app(test_config=None):
     app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
     app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
 
+    # For CORS preflight/headers
+    app.config['CORS_HEADERS'] = 'Content-Type,Authorization'
+
     if test_config:
         app.config.update(test_config)
 
@@ -71,6 +74,33 @@ def create_app(test_config=None):
     bcrypt.init_app(app)
     jwt.init_app(app)
     mail.init_app(app)
+<<<<<<< HEAD
+    # CORS configuration for development and production
+    CORS(app, 
+         supports_credentials=True,
+         origins="*",  # Allow all origins temporarily for debugging
+         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+         allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+         expose_headers=["Content-Type", "Authorization"]
+=======
+
+    # Import models *after* db is initialized to avoid circular import
+    from server import models  # noqa: F401
+
+    # ---- CORS configuration ----
+    origins_env = os.getenv("CORS_ORIGINS")
+    if origins_env:
+        allowed_origins = [o.strip() for o in origins_env.split(",") if o.strip()]
+    else:
+        allowed_origins = [
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:3001",
+            "https://deliveroo-server.onrender.com",
+            "https://your-frontend-domain.com"
+        ]
+
     # CORS configuration for development and production
     CORS(app, 
          supports_credentials=True,
@@ -120,11 +150,11 @@ def create_app(test_config=None):
 
     print("Before registering API resources")
     # Register API resources
-    from server.routes.profile import Signup, Register, Logout, Profile,Home
+    from server.routes.profile import Signup, Register, Logout, Profile, Home
     from server.routes.auth_routes import Login
     from server.routes.admin_routes import (
         AdminParcelList, UpdateParcelStatus, UpdateParcelLocation,
-        ParcelHistoryList, ParcelHistoryDetail,AdminParcelDetail
+        ParcelHistoryList, ParcelHistoryDetail, AdminParcelDetail
     )
     from server.routes.parcels import ParcelList, ParcelResource, ParcelCancel, ParcelDestination, ParcelStatus
     from server.routes.email_routes import (
@@ -132,9 +162,10 @@ def create_app(test_config=None):
         EmailParcelCancelled, EmailWelcome, EmailPasswordReset, EmailTest,
         EmailPreferences
     )
+
     api.add_resource(Home, '/')
     api.add_resource(Signup, '/signup')
-    api.add_resource(Register, '/register')  # Add register endpoint for frontend compatibility
+    api.add_resource(Register, '/register')  # Frontend compatibility
     api.add_resource(Login, '/login')
     api.add_resource(Logout, '/logout')
     api.add_resource(Profile, '/profile')
@@ -149,7 +180,7 @@ def create_app(test_config=None):
     api.add_resource(ParcelCancel, '/parcels/<int:parcel_id>/cancel')
     api.add_resource(ParcelDestination, '/parcels/<int:parcel_id>/destination')
     api.add_resource(ParcelStatus, '/parcels/<int:parcel_id>/status')
-    
+
     # Email routes
     api.add_resource(EmailParcelCreated, '/email/parcel-created')
     api.add_resource(EmailStatusUpdate, '/email/status-update')
