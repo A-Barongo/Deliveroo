@@ -80,8 +80,8 @@ def create_app(test_config=None):
              "http://127.0.0.1:3000", # Alternative localhost
              "http://127.0.0.1:3001", # Alternative localhost
              "https://deliveroo-server.onrender.com",  # Production backend
-             "https://your-frontend-domain.com",  # Replace with your frontend domain
-             "*"  # Allow all origins for development (remove in production)
+             "https://deliveroo-frontend.onrender.com",  # Production frontend
+             "https://your-frontend-domain.com"  # Replace with your frontend domain
          ],
          methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
          allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
@@ -99,6 +99,7 @@ def create_app(test_config=None):
             "http://127.0.0.1:3000",
             "http://127.0.0.1:3001",
             "https://deliveroo-server.onrender.com",
+            "https://deliveroo-frontend.onrender.com",
             "https://your-frontend-domain.com"
         ]:
             response.headers.add('Access-Control-Allow-Origin', origin)
@@ -120,6 +121,7 @@ def create_app(test_config=None):
             "http://127.0.0.1:3000",
             "http://127.0.0.1:3001",
             "https://deliveroo-server.onrender.com",
+            "https://deliveroo-frontend.onrender.com",
             "https://your-frontend-domain.com"
         ]:
             response.headers.add('Access-Control-Allow-Origin', origin)
