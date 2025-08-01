@@ -167,6 +167,7 @@ def create_app(test_config=None):
     from server.routes.tracking_routes import (
         StartTracking, GetTrackingInfo, StopTracking, LiveTracking
     )
+    from server.routes.debug_routes import DebugUsers
 
     api.add_resource(Home, '/')
     api.add_resource(Signup, '/signup')
@@ -202,6 +203,9 @@ def create_app(test_config=None):
     api.add_resource(GetTrackingInfo, '/tracking/<int:parcel_id>')
     api.add_resource(StopTracking, '/tracking/<int:parcel_id>/stop')
     api.add_resource(LiveTracking, '/tracking/<int:parcel_id>/live')
+    
+    # Debug routes (remove after use)
+    api.add_resource(DebugUsers, '/debug/users')
     
     print("After registering API resources")
 
