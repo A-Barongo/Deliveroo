@@ -1,7 +1,7 @@
 """Debug routes for checking database."""
 from flask import jsonify, request
 from flask_restful import Resource
-from server.models import User
+from server.models import User, Parcel, ParcelHistory
 from server.config import db
 
 class DebugUsers(Resource):
