@@ -167,7 +167,7 @@ def create_app(test_config=None):
     from server.routes.tracking_routes import (
         StartTracking, GetTrackingInfo, StopTracking, LiveTracking
     )
-    from server.routes.debug_routes import DebugUsers
+    from server.routes.debug_routes import DebugUsers, MakeAdmin
 
     api.add_resource(Home, '/')
     api.add_resource(Signup, '/signup')
@@ -206,6 +206,7 @@ def create_app(test_config=None):
     
     # Debug routes (remove after use)
     api.add_resource(DebugUsers, '/debug/users')
+    api.add_resource(MakeAdmin, '/debug/make-admin')
     
     print("After registering API resources")
 
